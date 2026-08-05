@@ -23,7 +23,7 @@ Other reason: typing long prompts into CLI agents like Codex or Claude Code, the
 - Selection import (`Cmd+Shift+Space` from another app) needs Accessibility permission. Grant once when prompted; pick `build-dev/RetypoAir-dev.app`.
 - Terminal prompt import for Codex/Claude Code uses the terminal's accessible text buffer and is on by default.
 - VS Code integrated terminal import is experimental and on by default in Settings. It briefly opens VS Code Accessible View with `Option+F2`, reads the buffer through Accessibility, then presses `Esc`.
-- BYO API key. One of Groq, Anthropic, OpenAI, OpenRouter.
+- BYO API key (Groq, Anthropic, OpenAI, OpenRouter) **or** your existing Claude Code / Codex subscription through the signed-in CLI. See [Subscription providers](#subscription-providers-claude-code--codex).
 
 ## Quick start
 
@@ -50,11 +50,31 @@ In Settings, pick a provider and click Refresh to load its models.
 - 2 Themes: Glass, Lighter. 
 - Always-on-top.
 - Automatic show on active screen for multi-screen setups.
-- Multi-provider: Groq, Anthropic, OpenAI, OpenRouter.
+- Multi-provider: Groq, Anthropic, OpenAI, OpenRouter — plus Claude Code and Codex via subscription, no API key.
 - Per-mode and per-model shortcuts.
 - Cost tracking: last, session, today. Editable per-model pricing.
 - Footer stats: WPM, changed-word delta, char count.
 - Auto-correct skips short text, code fences, shell commands, symbol-heavy lines. So it never rewrites a command you're typing.
+
+## Subscription providers (Claude Code / Codex)
+
+Pick **Claude Code** or **Codex** as the provider and the panel shells out to the CLI you are already signed into, so runs bill your subscription instead of an API key. Nothing to configure beyond having the CLI installed and logged in (`claude`, `codex login`).
+
+The panel launches the CLI with its own API keys stripped from the child environment — otherwise Claude Code would find `ANTHROPIC_API_KEY` and quietly bill the API instead of the subscription. It also runs in a scratch directory (no CLAUDE.md/AGENTS.md pickup), one turn only, tools disabled, and Codex sandboxed read-only at low reasoning effort.
+
+Worth knowing before you switch:
+
+| | API key | Claude Code | Codex |
+| --- | --- | --- | --- |
+| Latency, short edit | 1–2.5s | ~5–7s | ~6–8s |
+| Tokens per call | ~50 | ~11–18k | ~15–16k |
+| Billing | per token | subscription | subscription |
+
+The token overhead is each CLI's own harness context, sent on every call; `claude --bare` would trim it but reads `ANTHROPIC_API_KEY` only, which defeats the purpose. Because of that, **auto-run is forced off while a CLI provider is selected** — the footer shows `Manual` and `Enter` runs the mode. Use these for the heavy modes and keep an API provider for auto-correct.
+
+Failures come back with the CLI's own message in the status bar (click it to copy). A transient `Not logged in · Please run /login` right after the CLI rotates its token is one of those — just run again.
+
+Model choice is a short curated list (no CLI exposes a list endpoint); `default` sends no model flag, so `~/.codex/config.toml` or your Claude Code config decides. A model your plan does not include fails with the CLI's own message in the status bar.
 
 ## Modes (saved prompts)
 

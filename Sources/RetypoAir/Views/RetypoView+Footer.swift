@@ -77,10 +77,9 @@ extension RetypoView {
 
     private var autoToggle: some View {
         Button {
-            state.settings.autoCorrect.toggle()
-            state.saveSettings()
+            state.toggleAutoRun()
         } label: {
-            footerLink(state.settings.autoCorrect ? "Auto" : "Manual", active: state.settings.autoCorrect, focused: state.footerFocusIndex == 4)
+            footerLink(state.autoRunEnabled ? "Auto" : "Manual", active: state.autoRunEnabled, focused: state.footerFocusIndex == 4)
         }
         .buttonStyle(.plain)
         .pointingCursor()

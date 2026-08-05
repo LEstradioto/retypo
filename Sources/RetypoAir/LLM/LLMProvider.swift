@@ -5,6 +5,11 @@ enum ProviderKind: String, CaseIterable, Identifiable, Codable {
     case anthropic
     case openai
     case openrouter
+    /// Runs through the signed-in `claude` CLI — billed to the Claude
+    /// subscription, not to an API key.
+    case claudeCode
+    /// Runs through the signed-in `codex` CLI — billed to the ChatGPT plan.
+    case codex
 
     var id: String { rawValue }
 
@@ -14,17 +19,23 @@ enum ProviderKind: String, CaseIterable, Identifiable, Codable {
         case .anthropic: "Anthropic"
         case .openai: "OpenAI"
         case .openrouter: "OpenRouter"
+        case .claudeCode: "Claude Code"
+        case .codex: "Codex"
         }
     }
 
-    var apiKeyEnvironmentName: String {
+    /// `nil` for providers that authenticate through a signed-in local CLI.
+    var apiKeyEnvironmentName: String? {
         switch self {
         case .groq: "GROQ_API_KEY"
         case .anthropic: "ANTHROPIC_API_KEY"
         case .openai: "OPENAI_API_KEY"
         case .openrouter: "OPENROUTER_API_KEY"
+        case .claudeCode, .codex: nil
         }
     }
+
+    var usesLocalCLI: Bool { apiKeyEnvironmentName == nil }
 }
 
 struct ProviderModel: Identifiable, Hashable, Codable {
@@ -64,19 +75,26 @@ enum LLMError: LocalizedError {
     case badStatus(Int, String)
     case invalidResponse
     case parseFailed(String)
+    /// A local CLI provider could not be launched — usually not installed,
+    /// or installed somewhere a GUI app's minimal PATH cannot see.
+    case cliNotFound(String)
+    /// The CLI ran but reported a failure.
+    case cliFailed(String, String)
     /// The call succeeded but carried no answer — reasoning/thinking models
     /// can spend the whole token budget before emitting a visible token.
     case emptyCompletion(String)
 
     var errorDescription: String? {
         switch self {
-        case .missingAPIKey(let provider): "Missing \(provider.apiKeyEnvironmentName)"
+        case .missingAPIKey(let provider): "Missing \(provider.apiKeyEnvironmentName ?? provider.displayName) credentials"
         case .missingModel(let provider): "Select a \(provider.displayName) model first"
         case .invalidURL: "Invalid API URL"
         case .badStatus(let code, let body): "API error \(code): \(ProviderErrorMessage.summary(body))"
         case .invalidResponse: "Invalid API response"
         case .parseFailed(let body): "Could not parse response: \(body.prefix(280))"
         case .emptyCompletion(let reason): "Model returned no text (\(reason))"
+        case .cliNotFound(let tool): "`\(tool)` not found — install it and sign in, then reopen the panel"
+        case .cliFailed(let tool, let message): "\(tool): \(message)"
         }
     }
 }
@@ -88,7 +106,7 @@ protocol LLMProviderClient {
 
 enum APIKeyStore {
     static func apiKey(for provider: ProviderKind) -> String? {
-        guard let raw = getenv(provider.apiKeyEnvironmentName) else { return nil }
+        guard let name = provider.apiKeyEnvironmentName, let raw = getenv(name) else { return nil }
         let value = String(cString: raw).trimmingCharacters(in: .whitespacesAndNewlines)
         return value.isEmpty ? nil : value
     }

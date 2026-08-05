@@ -74,8 +74,16 @@ extension AppState {
         }
     }
 
+    /// Flips the preference, and says so when the provider overrides it.
+    func toggleAutoRun() {
+        settings.autoCorrect.toggle()
+        saveSettings()
+        guard settings.autoCorrect, settings.provider.usesLocalCLI else { return }
+        status = "Auto-run stays off for \(settings.provider.displayName) — press Enter to run"
+    }
+
     private func scheduleAutoCorrectIfEligible() {
-        guard settings.autoCorrect else { return }
+        guard autoRunEnabled else { return }
         guard CorrectionPolicy.shouldAutoCorrect(inputText) else { return }
         let hash = inputText.hashValue
         guard hash != lastAutoSubmittedHash else { return }

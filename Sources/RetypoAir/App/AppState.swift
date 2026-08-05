@@ -100,6 +100,13 @@ final class AppState: ObservableObject {
         settings.selectedModel(for: settings.provider)
     }
 
+    /// Auto-run stays off for the CLI providers: every call costs ~7s and
+    /// thousands of tokens of subscription quota, so firing on each typing
+    /// pause would drain the plan. Enter still runs the current mode.
+    var autoRunEnabled: Bool {
+        settings.autoCorrect && !settings.provider.usesLocalCLI
+    }
+
     var enabledActions: [EditAction] {
         let enabled = actions.filter(\.isEnabled)
         return enabled.isEmpty ? actions : enabled
