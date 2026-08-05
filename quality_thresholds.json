@@ -16,7 +16,7 @@
     "unused_declarations": 0
   },
   "coverage": {
-    "line_coverage_percent_min": 16.76
+    "line_coverage_percent_min": 17.3
   },
   "_skipped": {
     "branch_coverage": "Apple platforms expose only line coverage natively",

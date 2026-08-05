@@ -71,6 +71,22 @@ final class CodexProviderTests: XCTestCase {
         }
     }
 
+    func testRefreshReportsAMissingCLI() async {
+        let provider = CodexProvider(locate: { _ in nil })
+        do {
+            _ = try await provider.listModels(apiKey: "")
+            XCTFail("expected a missing-CLI failure")
+        } catch {
+            XCTAssertTrue(error.localizedDescription.contains("codex"), error.localizedDescription)
+        }
+    }
+
+    func testRefreshListsModelsWhenTheCLIIsInstalled() async throws {
+        let provider = CodexProvider(locate: { tool in URL(fileURLWithPath: "/usr/bin/\(tool)") })
+        let models = try await provider.listModels(apiKey: "")
+        XCTAssertEqual(models.first?.id, "default")
+    }
+
     private func cli(_ stdout: String) -> CLIResult {
         CLIResult(standardOutput: stdout, standardError: "", exitCode: 0)
     }

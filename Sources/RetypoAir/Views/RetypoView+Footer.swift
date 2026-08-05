@@ -119,9 +119,15 @@ extension RetypoView {
             Text("Session: \(state.cost.sessionCostLabel)")
             Text("Today: \(state.cost.dayCostLabel)")
         } label: {
-            footerLink("Last \(state.cost.lastCostLabel)", active: state.cost.lastCost.costUSD != nil, focused: state.footerFocusIndex == 8, maxWidth: 92)
+            footerLink(costLabel, active: state.cost.lastCost.costUSD != nil || state.cost.lastCostIsSubscription, focused: state.footerFocusIndex == 8, maxWidth: 92)
         }
         .menuStyle(.borderlessButton)
+    }
+
+    /// "Last subscription" would not survive the footer's width, and the word
+    /// alone already says the run cost no money.
+    private var costLabel: String {
+        state.cost.lastCostIsSubscription ? "Subscription" : "Last \(state.cost.lastCostLabel)"
     }
 
     private var footerStats: some View {

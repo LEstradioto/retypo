@@ -93,7 +93,7 @@ enum LLMError: LocalizedError {
         case .invalidResponse: "Invalid API response"
         case .parseFailed(let body): "Could not parse response: \(body.prefix(280))"
         case .emptyCompletion(let reason): "Model returned no text (\(reason))"
-        case .cliNotFound(let tool): "`\(tool)` not found — install it and sign in, then reopen the panel"
+        case .cliNotFound(let tool): "`\(tool)` not installed — install the CLI and sign in, then Refresh"
         case .cliFailed(let tool, let message): "\(tool): \(message)"
         }
     }

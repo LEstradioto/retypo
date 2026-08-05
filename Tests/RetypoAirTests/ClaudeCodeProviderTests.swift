@@ -54,6 +54,25 @@ final class ClaudeCodeProviderTests: XCTestCase {
         assertFailure(try ClaudeCodeOutput.parse(cli, tool: "claude"), contains: "127")
     }
 
+    /// The picker offers the provider whether or not the CLI is there, so the
+    /// refresh has to be the thing that says so.
+    func testRefreshReportsAMissingCLI() async {
+        let provider = ClaudeCodeProvider(locate: { _ in nil })
+        do {
+            _ = try await provider.listModels(apiKey: "")
+            XCTFail("expected a missing-CLI failure")
+        } catch {
+            XCTAssertTrue(error.localizedDescription.contains("claude"), error.localizedDescription)
+            XCTAssertTrue(error.localizedDescription.contains("not installed"), error.localizedDescription)
+        }
+    }
+
+    func testRefreshListsModelsWhenTheCLIIsInstalled() async throws {
+        let provider = ClaudeCodeProvider(locate: { tool in URL(fileURLWithPath: "/usr/bin/\(tool)") })
+        let models = try await provider.listModels(apiKey: "")
+        XCTAssertEqual(models.first?.id, "default")
+    }
+
     private func result(stdout: String) -> CLIResult {
         CLIResult(standardOutput: stdout, standardError: "", exitCode: 0)
     }

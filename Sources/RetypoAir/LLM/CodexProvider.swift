@@ -7,6 +7,11 @@ import Foundation
 /// without parsing the whole event stream for it.
 final class CodexProvider: LLMProviderClient {
     private let tool = "codex"
+    private let locate: (String) -> URL?
+
+    init(locate: @escaping (String) -> URL? = { CLIExecutableLocator.find($0) }) {
+        self.locate = locate
+    }
 
     func complete(_ request: LLMRequest, apiKey: String) async throws -> LLMResponse {
         let messageFile = FileManager.default.temporaryDirectory
@@ -16,8 +21,11 @@ final class CodexProvider: LLMProviderClient {
         return try CodexOutput.parse(result, messageFile: messageFile, tool: tool)
     }
 
+    /// See `ClaudeCodeProvider.listModels` — the refresh doubles as the
+    /// installed check.
     func listModels(apiKey: String) async throws -> [ProviderModel] {
-        CLIModelCatalog.codex
+        guard locate(tool) != nil else { throw LLMError.cliNotFound(tool) }
+        return CLIModelCatalog.codex
     }
 
     func arguments(for request: LLMRequest, messageFile: URL) -> [String] {

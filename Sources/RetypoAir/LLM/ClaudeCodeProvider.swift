@@ -10,14 +10,22 @@ import Foundation
 /// option: it reads `ANTHROPIC_API_KEY` only and never the subscription.
 final class ClaudeCodeProvider: LLMProviderClient {
     private let tool = "claude"
+    private let locate: (String) -> URL?
+
+    init(locate: @escaping (String) -> URL? = { CLIExecutableLocator.find($0) }) {
+        self.locate = locate
+    }
 
     func complete(_ request: LLMRequest, apiKey: String) async throws -> LLMResponse {
         let result = try await CLIProcessRunner.run(tool, arguments: arguments(for: request))
         return try ClaudeCodeOutput.parse(result, tool: tool)
     }
 
+    /// Refresh is the one moment we can say the CLI is missing before the
+    /// user hits Enter and waits out a run that was never going to work.
     func listModels(apiKey: String) async throws -> [ProviderModel] {
-        CLIModelCatalog.claudeCode
+        guard locate(tool) != nil else { throw LLMError.cliNotFound(tool) }
+        return CLIModelCatalog.claudeCode
     }
 
     func arguments(for request: LLMRequest) -> [String] {

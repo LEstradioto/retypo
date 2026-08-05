@@ -15,6 +15,9 @@ final class CostTracker: ObservableObject {
     @Published var sessionCostUSD: Double = 0
     @Published var dayCostUSD: Double = 0
     @Published var usageLedger: [UsageLedgerEntry]
+    /// Set when the last call ran through a subscription CLI. Those have no
+    /// per-token price, and a bare "$—" reads like the pricing table broke.
+    @Published private(set) var lastCallWasSubscription = false
 
     init(initialPricing: [String: ModelPricing], initialUsageLedger: [UsageLedgerEntry]) {
         self.pricing = initialPricing
@@ -22,7 +25,11 @@ final class CostTracker: ObservableObject {
         self.dayCostUSD = Self.costToday(from: initialUsageLedger)
     }
 
-    var lastCostLabel: String { formatCost(lastCost.costUSD) }
+    var lastCostLabel: String { lastCostIsSubscription ? "subscription" : formatCost(lastCost.costUSD) }
+
+    /// A priced entry still wins: someone who fills in pricing for a CLI model
+    /// wants the estimate they asked for.
+    var lastCostIsSubscription: Bool { lastCallWasSubscription && lastCost.costUSD == nil }
     var sessionCostLabel: String { formatCost(sessionCostUSD) }
     var dayCostLabel: String { formatCost(dayCostUSD) }
 
@@ -32,6 +39,7 @@ final class CostTracker: ObservableObject {
     func recordUsage(provider: ProviderKind, model: String, usage: TokenUsage) -> Double? {
         let cost = computeCost(provider: provider, model: model, usage: usage)
         lastCost = CostSnapshot(usage: usage, costUSD: cost)
+        lastCallWasSubscription = provider.usesLocalCLI
         if let cost {
             sessionCostUSD += cost
             dayCostUSD += cost
