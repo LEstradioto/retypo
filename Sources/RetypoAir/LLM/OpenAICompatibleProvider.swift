@@ -3,39 +3,32 @@ import Foundation
 final class OpenAICompatibleProvider: LLMProviderClient {
     private let baseURL: URL
     private let extraHeaders: [String: String]
+    private let transport: ProviderTransport
 
-    init(baseURL: URL, extraHeaders: [String: String] = [:]) {
+    init(baseURL: URL, transport: ProviderTransport, extraHeaders: [String: String] = [:]) {
         self.baseURL = baseURL
+        self.transport = transport
         self.extraHeaders = extraHeaders
     }
 
     func complete(_ request: LLMRequest, apiKey: String) async throws -> LLMResponse {
-        let urlRequest = try makeChatRequest(request, apiKey: apiKey)
-        let (data, response) = try await URLSession.shared.data(for: urlRequest)
-        try validate(response: response, data: data)
-        let object = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-        guard let text = extractText(from: object) else { throw LLMError.invalidResponse }
-        return LLMResponse(text: text, usage: parseUsage(object?["usage"] as? [String: Any]))
+        let object = try await transport.send(chatPost(request, apiKey: apiKey), model: request.model)
+        guard let text = extractText(from: object) else {
+            throw LLMError.emptyCompletion(finishReason(object))
+        }
+        return LLMResponse(text: text, usage: parseUsage(object["usage"] as? [String: Any]))
     }
 
     func listModels(apiKey: String) async throws -> [ProviderModel] {
-        let request = makeListModelsRequest(apiKey: apiKey)
-        let (data, response) = try await URLSession.shared.data(for: request)
-        try validate(response: response, data: data)
-        let object = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-        let items = object?["data"] as? [[String: Any]] ?? []
+        let object = try await transport.get(url: baseURL.appendingPathComponent("models"), headers: headers(apiKey))
+        let items = object["data"] as? [[String: Any]] ?? []
         return items.compactMap(decodeModel)
-            .filter { keepModelKind($0) }
+            .filter { ModelCatalogFilter.isTextModel($0.id) }
             .sorted { $0.id.localizedCaseInsensitiveCompare($1.id) == .orderedAscending }
     }
 
-    private func makeChatRequest(_ request: LLMRequest, apiKey: String) throws -> URLRequest {
-        var urlRequest = URLRequest(url: baseURL.appendingPathComponent("chat/completions"))
-        urlRequest.httpMethod = "POST"
-        urlRequest.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        for (key, value) in extraHeaders { urlRequest.setValue(value, forHTTPHeaderField: key) }
-        urlRequest.httpBody = try JSONSerialization.data(withJSONObject: [
+    private func chatPost(_ request: LLMRequest, apiKey: String) -> ProviderPost {
+        let body: [String: Any] = [
             "model": request.model,
             "messages": [
                 ["role": "system", "content": request.system],
@@ -43,22 +36,29 @@ final class OpenAICompatibleProvider: LLMProviderClient {
             ],
             "temperature": request.temperature,
             "max_tokens": request.maxTokens
-        ])
-        return urlRequest
+        ]
+        return ProviderPost(
+            url: baseURL.appendingPathComponent("chat/completions"),
+            headers: headers(apiKey),
+            body: body,
+            optionalKeys: ["temperature", "top_p"]
+        )
     }
 
-    private func makeListModelsRequest(apiKey: String) -> URLRequest {
-        var request = URLRequest(url: baseURL.appendingPathComponent("models"))
-        request.httpMethod = "GET"
-        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        for (key, value) in extraHeaders { request.setValue(value, forHTTPHeaderField: key) }
-        return request
+    private func headers(_ apiKey: String) -> [String: String] {
+        extraHeaders.merging(["Authorization": "Bearer \(apiKey)"]) { _, new in new }
     }
 
-    private func extractText(from object: [String: Any]?) -> String? {
-        let choices = object?["choices"] as? [[String: Any]]
+    private func extractText(from object: [String: Any]) -> String? {
+        let choices = object["choices"] as? [[String: Any]]
         let message = choices?.first?["message"] as? [String: Any]
         return message?["content"] as? String
+    }
+
+    private func finishReason(_ object: [String: Any]) -> String {
+        let choices = object["choices"] as? [[String: Any]]
+        guard let reason = choices?.first?["finish_reason"] as? String else { return "no content returned" }
+        return reason == "length" ? "hit the token limit before answering" : "finish reason: \(reason)"
     }
 
     private func decodeModel(_ item: [String: Any]) -> ProviderModel? {
@@ -68,11 +68,6 @@ final class OpenAICompatibleProvider: LLMProviderClient {
         let context = item["context_length"] as? Int ?? item["contextLength"] as? Int
         let pricing = parseModelPricing(item["pricing"] as? [String: Any])
         return ProviderModel(id: id, name: name, description: description, contextLength: context, pricing: pricing)
-    }
-
-    private func keepModelKind(_ model: ProviderModel) -> Bool {
-        let id = model.id.lowercased()
-        return !id.contains("embedding") && !id.contains("whisper") && !id.contains("tts") && !id.contains("image") && !id.contains("moderation")
     }
 
     private func parseModelPricing(_ pricing: [String: Any]?) -> ModelPricing? {
@@ -91,20 +86,8 @@ final class OpenAICompatibleProvider: LLMProviderClient {
 
     private func parseUsage(_ usage: [String: Any]?) -> TokenUsage {
         guard let usage else { return .zero }
-        let input = usage["prompt_tokens"] as? Int
-            ?? usage["input_tokens"] as? Int
-            ?? 0
-        let output = usage["completion_tokens"] as? Int
-            ?? usage["output_tokens"] as? Int
-            ?? 0
+        let input = usage["prompt_tokens"] as? Int ?? usage["input_tokens"] as? Int ?? 0
+        let output = usage["completion_tokens"] as? Int ?? usage["output_tokens"] as? Int ?? 0
         return TokenUsage(inputTokens: input, outputTokens: output)
-    }
-
-    private func validate(response: URLResponse, data: Data) throws {
-        guard let http = response as? HTTPURLResponse else { throw LLMError.invalidResponse }
-        guard (200..<300).contains(http.statusCode) else {
-            let body = String(data: data, encoding: .utf8) ?? ""
-            throw LLMError.badStatus(http.statusCode, body)
-        }
     }
 }

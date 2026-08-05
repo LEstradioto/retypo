@@ -131,9 +131,7 @@ extension RetypoView {
             Text("Δ\(state.wordsChangedLast)")
                 .foregroundStyle(state.wordsChangedLast == 0 ? statColor : Color.accentColor.opacity(isLighter ? 0.78 : 0.92))
                 .monospacedDigit()
-            Text(state.status)
-                .lineLimit(1)
-                .truncationMode(.tail)
+            statusText
             Text("\(state.inputText.count)")
                 .monospacedDigit()
                 .foregroundStyle(statColor)

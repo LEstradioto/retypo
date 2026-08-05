@@ -91,6 +91,7 @@ extension AppState {
 
     func refreshModels(for provider: ProviderKind) async {
         llm.isLoadingModels = true
+        clearLastError()
         status = "Loading \(provider.displayName) models"
         do {
             let models = try await llm.router.listModels(for: provider)
@@ -98,7 +99,7 @@ extension AppState {
             mergePricingDefaults(for: provider, models: models)
             status = models.isEmpty ? "No models returned" : "Loaded \(models.count) models"
         } catch {
-            status = error.localizedDescription
+            report(error, while: "Refresh models")
         }
         llm.isLoadingModels = false
     }

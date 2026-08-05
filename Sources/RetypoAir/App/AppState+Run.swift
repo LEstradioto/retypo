@@ -33,7 +33,7 @@ extension AppState {
             applyResult(ActionOutcome(text: parsed.corrected, original: context.original, changed: parsed.changed, response: response, action: currentAction, instruction: PromptTemplates.correctionSystem))
         } catch {
             guard context.generation == llm.generation else { return }
-            status = error.localizedDescription
+            report(error, while: "Correct")
         }
         llm.isCorrecting = false
     }
@@ -69,7 +69,7 @@ extension AppState {
             applyResult(ActionOutcome(text: text, original: context.original, changed: text != context.original, response: response, action: action, instruction: instruction))
         } catch {
             guard context.generation == llm.generation else { return }
-            status = error.localizedDescription
+            report(error, while: action.title)
         }
         llm.isCorrecting = false
     }
@@ -131,7 +131,7 @@ extension AppState {
                 appendCandidate(ActionOutcome(text: text, original: original, changed: text != original, response: response, action: action, instruction: instruction))
             }
         } catch {
-            status = error.localizedDescription
+            report(error, while: action.title)
         }
     }
 
@@ -166,6 +166,7 @@ extension AppState {
         lastAutoSubmittedHash = inputText.hashValue
         llm.generation += 1
         llm.isCorrecting = true
+        clearLastError()
         status = source == "auto" ? statusAuto : statusManual
         return ActionContext(model: model, original: original, generation: llm.generation)
     }

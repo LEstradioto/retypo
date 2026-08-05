@@ -4,18 +4,30 @@ final class LLMRouter {
     private let providers: [ProviderKind: LLMProviderClient]
 
     init() {
+        // One memory shared by every provider: a parameter a model rejects is
+        // learned once and skipped for the rest of the session.
+        let memory = RejectedParameterMemory()
         providers = [
-            .groq: OpenAICompatibleProvider(baseURL: URL(staticString: "https://api.groq.com/openai/v1")),
-            .openrouter: OpenAICompatibleProvider(
-                baseURL: URL(staticString: "https://openrouter.ai/api/v1"),
-                extraHeaders: [
-                    "HTTP-Referer": "https://retypo-air.local",
-                    "X-Title": "Retypo Air"
-                ]
-            ),
-            .anthropic: AnthropicProvider(),
-            .openai: OpenAIResponsesProvider()
+            .groq: Self.groq(memory),
+            .openrouter: Self.openRouter(memory),
+            .anthropic: AnthropicProvider(memory: memory),
+            .openai: OpenAIResponsesProvider(memory: memory)
         ]
+    }
+
+    private static func groq(_ memory: RejectedParameterMemory) -> LLMProviderClient {
+        OpenAICompatibleProvider(
+            baseURL: URL(staticString: "https://api.groq.com/openai/v1"),
+            transport: ProviderTransport(provider: .groq, memory: memory)
+        )
+    }
+
+    private static func openRouter(_ memory: RejectedParameterMemory) -> LLMProviderClient {
+        OpenAICompatibleProvider(
+            baseURL: URL(staticString: "https://openrouter.ai/api/v1"),
+            transport: ProviderTransport(provider: .openrouter, memory: memory),
+            extraHeaders: ["HTTP-Referer": "https://retypo-air.local", "X-Title": "Retypo Air"]
+        )
     }
 
     func complete(_ request: LLMRequest) async throws -> LLMResponse {

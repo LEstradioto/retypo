@@ -11,6 +11,9 @@ final class AppState: ObservableObject {
     @Published var correctedText: String = ""
     @Published var outputText: String = ""
     @Published var status: String = "Ready"
+    /// Full text of the last failure. `status` is shown on a single truncated
+    /// footer line, so the readable version lives here for tooltip and copy.
+    @Published var lastErrorDetail: String?
     @Published var diffText: String = ""
     @Published var inlineHighlightRanges: [NSRange] = []
     @Published var showSettings = false

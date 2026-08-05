@@ -1,6 +1,6 @@
 {
   "_comment": "Ratcheted baseline \u2014 see .claude/skills/apply-quality-gates/SKILL.md. Lower numbers via `bin/quality-bump`. Any PR that grows a count fails `bin/quality`.",
-  "_captured_at": "2026-05-08",
+  "_captured_at": "2026-08-05",
   "swiftlint": {
     "cyclomatic_complexity": 3,
     "function_body_length": 14,
@@ -16,7 +16,7 @@
     "unused_declarations": 0
   },
   "coverage": {
-    "line_coverage_percent_min": 12.57
+    "line_coverage_percent_min": 14.98
   },
   "_skipped": {
     "branch_coverage": "Apple platforms expose only line coverage natively",

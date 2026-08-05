@@ -64,15 +64,19 @@ enum LLMError: LocalizedError {
     case badStatus(Int, String)
     case invalidResponse
     case parseFailed(String)
+    /// The call succeeded but carried no answer — reasoning/thinking models
+    /// can spend the whole token budget before emitting a visible token.
+    case emptyCompletion(String)
 
     var errorDescription: String? {
         switch self {
         case .missingAPIKey(let provider): "Missing \(provider.apiKeyEnvironmentName)"
         case .missingModel(let provider): "Select a \(provider.displayName) model first"
         case .invalidURL: "Invalid API URL"
-        case .badStatus(let code, let body): "API error \(code): \(body.prefix(280))"
+        case .badStatus(let code, let body): "API error \(code): \(ProviderErrorMessage.summary(body))"
         case .invalidResponse: "Invalid API response"
         case .parseFailed(let body): "Could not parse response: \(body.prefix(280))"
+        case .emptyCompletion(let reason): "Model returned no text (\(reason))"
         }
     }
 }

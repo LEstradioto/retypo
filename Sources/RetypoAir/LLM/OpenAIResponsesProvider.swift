@@ -2,45 +2,64 @@ import Foundation
 
 final class OpenAIResponsesProvider: LLMProviderClient {
     private let baseURL = URL(staticString: "https://api.openai.com/v1")
-    private let modelProvider = OpenAICompatibleProvider(baseURL: URL(staticString: "https://api.openai.com/v1"))
+    private let modelProvider: OpenAICompatibleProvider
+    private let transport: ProviderTransport
+
+    init(memory: RejectedParameterMemory) {
+        transport = ProviderTransport(provider: .openai, memory: memory)
+        modelProvider = OpenAICompatibleProvider(
+            baseURL: URL(staticString: "https://api.openai.com/v1"),
+            transport: transport
+        )
+    }
 
     func complete(_ request: LLMRequest, apiKey: String) async throws -> LLMResponse {
-        let urlRequest = try makeResponsesRequest(request, apiKey: apiKey)
-        let (data, response) = try await URLSession.shared.data(for: urlRequest)
-        try validate(response: response, data: data)
-        let object = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        let object = try await transport.send(responsesPost(request, apiKey: apiKey), model: request.model)
         guard let text = extractText(from: object), !text.isEmpty else {
-            throw LLMError.invalidResponse
+            throw LLMError.emptyCompletion(OpenAIBudget.emptyReason(object))
         }
-        return LLMResponse(text: text, usage: parseUsage(object?["usage"] as? [String: Any]))
+        return LLMResponse(text: text, usage: parseUsage(object["usage"] as? [String: Any]))
     }
 
     func listModels(apiKey: String) async throws -> [ProviderModel] {
         try await modelProvider.listModels(apiKey: apiKey)
     }
 
-    private func makeResponsesRequest(_ request: LLMRequest, apiKey: String) throws -> URLRequest {
-        var urlRequest = URLRequest(url: baseURL.appendingPathComponent("responses"))
-        urlRequest.httpMethod = "POST"
-        urlRequest.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        urlRequest.httpBody = try JSONSerialization.data(withJSONObject: [
+    private func responsesPost(_ request: LLMRequest, apiKey: String) -> ProviderPost {
+        ProviderPost(
+            url: baseURL.appendingPathComponent("responses"),
+            headers: ["Authorization": "Bearer \(apiKey)"],
+            body: responsesBody(request),
+            optionalKeys: ["temperature", "top_p", "reasoning"]
+        )
+    }
+
+    /// Reasoning models reject `temperature` and burn `max_output_tokens` on
+    /// hidden reasoning; chat models reject `reasoning`. Send one or the other.
+    private func responsesBody(_ request: LLMRequest) -> [String: Any] {
+        var body: [String: Any] = [
             "model": request.model,
             "instructions": request.system,
             "input": request.user,
-            "max_output_tokens": request.maxTokens,
-            "temperature": request.temperature
-        ])
-        return urlRequest
+            "max_output_tokens": OpenAIBudget.maxOutputTokens(for: request)
+        ]
+        if ModelParameterSupport.openAIUsesReasoning(request.model) {
+            body["reasoning"] = ["effort": OpenAIBudget.reasoningEffort]
+        } else {
+            body["temperature"] = request.temperature
+        }
+        return body
     }
 
-    private func extractText(from object: [String: Any]?) -> String? {
-        if let direct = object?["output_text"] as? String, !direct.isEmpty { return direct }
-        guard let output = object?["output"] as? [[String: Any]] else { return nil }
+    /// Reasoning items sit in `output` next to the message and carry an empty
+    /// `content` array, so they contribute nothing here.
+    private func extractText(from object: [String: Any]) -> String? {
+        if let direct = object["output_text"] as? String, !direct.isEmpty { return direct }
+        guard let output = object["output"] as? [[String: Any]] else { return nil }
         let text = output.flatMap { item -> [String] in
             let content = item["content"] as? [[String: Any]] ?? []
             return content.compactMap { $0["text"] as? String }
-        }.joined(separator: "")
+        }.joined()
         return text.isEmpty ? nil : text
     }
 
@@ -49,13 +68,5 @@ final class OpenAIResponsesProvider: LLMProviderClient {
         let input = usage["input_tokens"] as? Int ?? usage["prompt_tokens"] as? Int ?? 0
         let output = usage["output_tokens"] as? Int ?? usage["completion_tokens"] as? Int ?? 0
         return TokenUsage(inputTokens: input, outputTokens: output)
-    }
-
-    private func validate(response: URLResponse, data: Data) throws {
-        guard let http = response as? HTTPURLResponse else { throw LLMError.invalidResponse }
-        guard (200..<300).contains(http.statusCode) else {
-            let body = String(data: data, encoding: .utf8) ?? ""
-            throw LLMError.badStatus(http.statusCode, body)
-        }
     }
 }
