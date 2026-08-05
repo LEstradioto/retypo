@@ -3,6 +3,7 @@ import Foundation
 struct PromptBufferExtractor {
     private let statusLines = PromptStatusLineClassifier()
     private let cleaner = PromptPaneTextCleaner()
+    private let paneSlicer = PromptPaneSlicer()
 
     func prompt(from rawText: String) -> PromptCaptureCandidate? {
         let lines = normalizedLines(rawText)
@@ -21,7 +22,9 @@ struct PromptBufferExtractor {
 
     private func claudeDividerPrompt(_ lines: [String]) -> PromptCaptureCandidate? {
         guard let pair = dividerPairs(lines).last else { return nil }
-        let text = cleaner.text(from: lines[(pair.top + 1)..<pair.bottom])
+        let range = arrowPaneRange(lines: lines, top: pair.top, bottom: pair.bottom)
+        let sliced = (pair.top + 1..<pair.bottom).map { paneSlicer.slice(line: lines[$0], range: range) }
+        let text = cleaner.text(from: ArraySlice(sliced))
         guard isUsable(text) else { return nil }
         return PromptCaptureCandidate(text: text, kind: .claudeDividerComposer)
     }
@@ -29,6 +32,7 @@ struct PromptBufferExtractor {
     private func dividerPairs(_ lines: [String]) -> [(top: Int, bottom: Int)] {
         let indexes = lines.indices.filter { isDividerLine(lines[$0]) }
         return indexes.flatMap { top in validDividerPairs(top: top, indexes: indexes) }
+            .filter { encloses(promptMarker: lines, between: $0.top, and: $0.bottom) }
     }
 
     private func validDividerPairs(top: Int, indexes: [Int]) -> [(top: Int, bottom: Int)] {
@@ -39,17 +43,32 @@ struct PromptBufferExtractor {
         }
     }
 
+    private func encloses(promptMarker lines: [String], between top: Int, and bottom: Int) -> Bool {
+        (top + 1..<bottom).contains { paneSlicer.containsPromptMarker(lines[$0]) }
+    }
+
+    private func arrowPaneRange(lines: [String], top: Int, bottom: Int) -> PromptPaneSlicer.Range? {
+        for index in (top + 1)..<bottom {
+            if let range = paneSlicer.paneRange(forArrowIn: lines[index]) { return range }
+        }
+        return nil
+    }
+
     private func bottomPrompt(_ lines: [String]) -> PromptCaptureCandidate? {
         guard let start = lastPromptMarkerIndex(lines) else { return nil }
-        let end = bottomPromptEnd(lines, start: start)
-        let text = cleaner.text(from: lines[start...end])
+        let range = paneSlicer.paneRange(forArrowIn: lines[start])
+        let end = bottomPromptEnd(lines, start: start, paneRange: range)
+        let sliced = (start...end).map { paneSlicer.slice(line: lines[$0], range: range) }
+        let text = cleaner.text(from: ArraySlice(sliced))
         guard isUsable(text) else { return nil }
         return PromptCaptureCandidate(text: text, kind: .accessibilityTextBuffer)
     }
 
-    private func bottomPromptEnd(_ lines: [String], start: Int) -> Int {
+    private func bottomPromptEnd(_ lines: [String], start: Int, paneRange: PromptPaneSlicer.Range?) -> Int {
         var index = start
-        while lines.indices.contains(index + 1), shouldIncludeBottomLine(lines[index + 1], distance: index - start) {
+        while lines.indices.contains(index + 1) {
+            let next = paneSlicer.slice(line: lines[index + 1], range: paneRange)
+            guard shouldIncludeBottomLine(next, distance: index - start) else { break }
             index += 1
         }
         return index
@@ -69,12 +88,7 @@ struct PromptBufferExtractor {
     }
 
     private func lastPromptMarkerIndex(_ lines: [String]) -> Int? {
-        lines.indices.reversed().first { isPromptMarkerLine(lines[$0]) }
-    }
-
-    private func isPromptMarkerLine(_ line: String) -> Bool {
-        let trimmed = line.trimmingCharacters(in: .whitespaces)
-        return ["> ", "› ", "❯ "].contains { trimmed.hasPrefix($0) } && !isStatusLine(trimmed)
+        lines.indices.reversed().first { paneSlicer.containsPromptMarker(lines[$0]) }
     }
 
     private func isUsable(_ text: String) -> Bool {

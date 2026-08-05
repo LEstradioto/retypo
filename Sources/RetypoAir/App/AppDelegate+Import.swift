@@ -11,6 +11,13 @@ extension AppDelegate {
     func importSelectedTextFromFrontmostApp(allowClipboardFallback: Bool) {
         DebugLog.log("import begin nsAppActive=\(NSApp.isActive)")
         guard let source = importSourceContext() else { return }
+        showPanel()
+        DispatchQueue.main.async { [weak self] in
+            self?.continueImportAfterPanelShown(source: source, allowClipboardFallback: allowClipboardFallback)
+        }
+    }
+
+    private func continueImportAfterPanelShown(source: ImportSourceContext, allowClipboardFallback: Bool) {
         if importImmediateSourceText(source) { return }
         guard allowClipboardFallback else {
             finishImportWithoutClipboardFallback(sourceName: source.name)

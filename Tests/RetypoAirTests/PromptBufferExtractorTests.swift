@@ -135,6 +135,113 @@ final class PromptBufferExtractorTests: XCTestCase {
         XCTAssertEqual(prompt?.text, "testando nova,ente\n\nlegal\n\n\n123")
     }
 
+    func testIgnoresSidebarDividerWithoutPromptMarkerAndFallsBackToArrow() {
+        let buffer = """
+        ┌─ Sessions ──────┐
+        │ session 1       │
+        │ session 2       │
+        ├─────────────────┤
+        │ files           │
+        │ actions         │
+        └─────────────────┘
+        re-typoer on  master via 🐦 v6.2.1
+        ❯ build the parser fix
+          keep the arrow heuristic
+        """
+
+        let prompt = extractor.prompt(from: buffer)
+
+        XCTAssertEqual(prompt?.kind, .accessibilityTextBuffer)
+        XCTAssertEqual(prompt?.text, "build the parser fix\nkeep the arrow heuristic")
+    }
+
+    func testExtractsClaudeComposerFromTmuxMiddlePaneWithSidebar() {
+        let middlePad = String(repeating: "─", count: 192)
+        let bottomMid = String(repeating: "─", count: 192)
+        let promptPad = String(repeating: " ", count: 100)
+        let buffer = [
+            "                                    │\(middlePad)│",
+            " ───────────────────────────────────│❯ testando 12\(promptPad)│",
+            " ⇥ cycle  ⏎ go  → agents  f filter  │\(bottomMid)│"
+        ].joined(separator: "\n")
+
+        let prompt = extractor.prompt(from: buffer)
+
+        XCTAssertEqual(prompt?.kind, .claudeDividerComposer)
+        XCTAssertEqual(prompt?.text, "testando 12")
+    }
+
+    func testExtractsMultilineClaudeComposerFromTmuxMiddlePane() {
+        let topBorder = String(repeating: "─", count: 80)
+        let bottomBorder = String(repeating: "─", count: 80)
+        let pad = String(repeating: " ", count: 40)
+        let buffer = [
+            "                          │\(topBorder)│",
+            " ─────────────────────────│❯ first line of prompt\(pad)│",
+            "  ⇥ cycle  ⏎ go           │  second line\(String(repeating: " ", count: 50))│",
+            "                          │\(bottomBorder)│"
+        ].joined(separator: "\n")
+
+        let prompt = extractor.prompt(from: buffer)
+
+        XCTAssertEqual(prompt?.kind, .claudeDividerComposer)
+        XCTAssertEqual(prompt?.text, "first line of prompt\nsecond line")
+    }
+
+    func testExtractsVSCodeClaudeAccessibleViewBottomComposer() {
+        let nbsp = "\u{00A0}"
+        let divider = String(repeating: "─", count: 152)
+        let buffer = """
+        previous assistant message
+          ✔ S6.4a hardening
+          ✔ S6.4b — Grant tokens
+
+        \(divider)
+        ❯\(nbsp)tste
+        \(divider)
+          ⏵⏵ auto mode on · 2 shells
+        """
+
+        let prompt = extractor.prompt(from: buffer)
+
+        XCTAssertEqual(prompt?.kind, .claudeDividerComposer)
+        XCTAssertEqual(prompt?.text, "tste")
+    }
+
+    func testExtractsCodexPromptFromTmuxMiddlePaneWithoutClosingDivider() {
+        let pad = String(repeating: " ", count: 100)
+        let buffer = [
+            "                                    │─ Worked for 23m 09s ─────────────────────────│",
+            "                                    │\(pad)│",
+            " ───────────────────────────────────│                                    \(pad)│",
+            " ⇥ cycle  ⏎ go  → agents  f filter  │› testes fsdafsad fssfadsfad\(pad)│",
+            " d hide  x kill                     │\(pad)│",
+            "                                    │  gpt-5.5 high fast · Context 86% used · 258K window\(pad)│"
+        ].joined(separator: "\n")
+
+        let prompt = extractor.prompt(from: buffer)
+
+        XCTAssertEqual(prompt?.kind, .accessibilityTextBuffer)
+        XCTAssertEqual(prompt?.text, "testes fsdafsad fssfadsfad")
+    }
+
+    func testExtractsClaudeComposerWithNonBreakingSpaceAfterArrow() {
+        let nbsp = "\u{00A0}"
+        let topBorder = String(repeating: "─", count: 192)
+        let bottomBorder = String(repeating: "─", count: 192)
+        let pad = String(repeating: " ", count: 100)
+        let buffer = [
+            "                                    │\(topBorder)│",
+            " ───────────────────────────────────│❯\(nbsp)teste\(pad)│",
+            " ⇥ cycle  ⏎ go  → agents  f filter  │\(bottomBorder)│"
+        ].joined(separator: "\n")
+
+        let prompt = extractor.prompt(from: buffer)
+
+        XCTAssertEqual(prompt?.kind, .claudeDividerComposer)
+        XCTAssertEqual(prompt?.text, "teste")
+    }
+
     func testIgnoresTranscriptWithoutPromptSemantics() {
         let buffer = """
         previous answer

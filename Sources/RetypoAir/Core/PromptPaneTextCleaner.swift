@@ -89,10 +89,13 @@ struct PromptPaneTextCleaner {
     }
 
     private func stripPromptMarker(_ line: String) -> String {
-        for marker in ["> ", "› ", "❯ ", "┃ ", "│ "] where line.hasPrefix(marker) {
-            return String(line.dropFirst(marker.count)).trimmingCharacters(in: .whitespaces)
-        }
-        return line
+        guard let first = line.first, promptMarkerPrefixes.contains(first),
+              let second = line.dropFirst().first, second.isWhitespace else { return line }
+        return String(line.dropFirst(2)).trimmingCharacters(in: .whitespaces)
+    }
+
+    private var promptMarkerPrefixes: Set<Character> {
+        Set(">›❯┃│")
     }
 
     private var buildLogPrefixes: [String] {
