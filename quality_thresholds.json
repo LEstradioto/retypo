@@ -10,13 +10,13 @@
     "force_unwrapping": 0,
     "force_cast": 0,
     "force_try": 0,
-    "total_warnings": 40
+    "total_warnings": 39
   },
   "periphery": {
     "unused_declarations": 0
   },
   "coverage": {
-    "line_coverage_percent_min": 20.36
+    "line_coverage_percent_min": 20.79
   },
   "_skipped": {
     "branch_coverage": "Apple platforms expose only line coverage natively",

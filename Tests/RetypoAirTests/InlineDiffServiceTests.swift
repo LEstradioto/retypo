@@ -55,4 +55,32 @@ final class InlineDiffServiceTests: XCTestCase {
         )
         XCTAssertEqual(count, 0)
     }
+
+    func testExactLCSStaysInsideFixedCellBudget() {
+        XCTAssertTrue(InlineDiffService.shouldUseExactLCS(oldTokenCount: 1_000, newTokenCount: 1_000))
+        XCTAssertFalse(InlineDiffService.shouldUseExactLCS(oldTokenCount: 1_001, newTokenCount: 1_001))
+        XCTAssertFalse(InlineDiffService.shouldUseExactLCS(oldTokenCount: 10_000, newTokenCount: 10_000))
+    }
+
+    func testLargeSingleReplacementKeepsPreciseRange() throws {
+        let original = Array(repeating: "alpha", count: 10_000).joined(separator: " ")
+        var correctedWords = Array(repeating: "alpha", count: 10_000)
+        correctedWords[5_000] = "bravo"
+        let corrected = correctedWords.joined(separator: " ")
+
+        let ranges = InlineDiffService.changedRanges(original: original, corrected: corrected)
+
+        XCTAssertEqual(ranges.count, 1)
+        let changedRange = try XCTUnwrap(ranges.first)
+        XCTAssertEqual((corrected as NSString).substring(with: changedRange), "bravo")
+    }
+
+    func testLargeFullRewriteReturnsOneBoundedRange() {
+        let original = Array(repeating: "alpha", count: 2_000).joined(separator: " ")
+        let corrected = Array(repeating: "bravo", count: 2_000).joined(separator: " ")
+
+        let ranges = InlineDiffService.changedRanges(original: original, corrected: corrected)
+
+        XCTAssertEqual(ranges, [NSRange(location: 0, length: (corrected as NSString).length)])
+    }
 }

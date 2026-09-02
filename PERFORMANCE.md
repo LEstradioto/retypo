@@ -41,9 +41,9 @@ These are code-review findings, not measured bottlenecks.
 3. Most views observe one large `AppState`. Changes from `CostTracker` and
    `LLMSession` are forwarded through `AppState.objectWillChange`, which can make
    unrelated state changes re-evaluate broad SwiftUI subtrees.
-4. `InlineDiffService` builds an O(oldWords * newWords) LCS matrix. That is simple
-   and correct for normal prompts, but time and memory can grow sharply for large
-   documents.
+4. `InlineDiffService` uses an O(oldWords * newWords) LCS matrix only within a
+   fixed one-million-cell budget. Loop 4 added a linear coarse path for larger
+   documents after Release measurements confirmed quadratic growth.
 5. Import debugging creates an unstructured task, timestamp formatter, and file
    handle for each log line. This is bounded during normal imports but should be
    checked in File Activity before changing it.
@@ -200,6 +200,25 @@ needs exact highlighting for very large documents.
 
 Success signal: bounded memory and latency at the supported maximum input while
 existing diff fixtures remain identical.
+
+#### Bounded-diff pass — 2026-09-02
+
+The Release baseline changed one middle word in otherwise identical documents.
+Median times were 0.10 ms at 100 words, 3.27 ms at 1,000 words, and 26.05 ms at
+3,000 words, demonstrating the expected quadratic curve. A 10,000-by-10,000 LCS
+was not run before the fix because its `Int` cells alone would require about
+800 MB, excluding row and allocator overhead.
+
+Exact LCS now has a one-million-cell budget. Above it, the diff compares common
+prefix and suffix tokens and marks the remaining corrected span. This is linear,
+keeps a single localized edit precise in a long document, and bounds a full
+rewrite. The explicit tradeoff is that multiple distant edits or reordering in a
+large document may highlight the intervening corrected text as one coarse span.
+
+Post-change Release medians were 0.11 ms at 100 words, 3.13 ms at 1,000 words,
+0.66 ms at 3,000 words, and 2.07 ms at 10,000 words. Tests preserve all exact
+small-input fixtures, lock the cell-budget boundary, validate a precise
+10,000-word single replacement, and cover a large full rewrite.
 
 ### Loop 5: launch, logging, and idle work
 
