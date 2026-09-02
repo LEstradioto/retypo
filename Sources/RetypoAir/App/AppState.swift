@@ -42,6 +42,7 @@ final class AppState: ObservableObject {
     let cost: CostTracker
     let llm = LLMSession()
     let draftPersistence: DraftPersisting
+    let wordCounter: WordCounting
 
     weak var host: PanelHost?
 
@@ -54,15 +55,18 @@ final class AppState: ObservableObject {
     /// and reset the WPM session so the number doesn't keep falling while you
     /// step away from the keyboard.
     var lastTypingUpdate: Date?
+    var lastTypingStatsRefresh: Date?
     var editor = EditorEngine(limit: 50)
     private var cancellables = Set<AnyCancellable>()
 
     init(
         settings: RetypoSettings,
-        draftPersistence: DraftPersisting = CoalescingDraftPersistence()
+        draftPersistence: DraftPersisting = CoalescingDraftPersistence(),
+        wordCounter: WordCounting = LocalizedWordCounter()
     ) {
         self.settings = settings
         self.draftPersistence = draftPersistence
+        self.wordCounter = wordCounter
         self.actions = EditActionStore.load()
         self.history = HistoryStore.load()
         let (loadedPricing, pricingChanged) = Self.loadedPricing()

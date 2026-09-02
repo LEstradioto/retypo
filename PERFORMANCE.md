@@ -32,9 +32,9 @@ Not measured yet:
 These are code-review findings, not measured bottlenecks.
 
 1. `AppState.onInputChanged` previously atomically wrote `draft.txt` on every
-   keystroke and still performs a full localized word scan after the warm-up
-   window. Loop 1 moved the draft write off the main actor; the word scan remains
-   to be measured.
+   keystroke and performed a full localized word scan after the warm-up window.
+   Loop 1 moved the draft write off the main actor and bounds the word scan to
+   two refreshes per second.
 2. Window move and resize callbacks synchronously encode and atomically write the
    settings file for every callback.
 3. Most views observe one large `AppState`. Changes from `CostTracker` and
@@ -125,8 +125,28 @@ Recovery remains immediate after each completed background write and on normal
 hide/quit. An abrupt process or system failure can lose the most recent value
 while it is queued or in flight; this short window is the explicit cost of taking
 filesystem I/O off the typing path. A Release Instruments trace is still needed
-before claiming lower keypress-to-frame latency. The WPM scan remains the next
-typing pass.
+before claiming lower keypress-to-frame latency. The WPM scan is addressed in
+the next pass below.
+
+#### WPM pass — 2026-09-02
+
+The baseline ran 200 localized word scans for each draft size. Median totals were
+7.67 ms at 100 characters, 12.30 ms at 1,000 characters, and 62.74 ms at 10,000
+characters. This synthetic loop represents the old one-scan-per-key-event path;
+it does not include SwiftUI rendering.
+
+Per-key work now records only session and pause timestamps. A word scan and WPM
+publication occur at most every 0.5 seconds, so the displayed rate remains live
+without invalidating the footer for every key. `WordCounting` is injected into
+`AppState`, while `LocalizedWordCounter` retains the existing Foundation word
+semantics.
+
+For 200 simulated key events at 20 events per second with a 10,000-character
+draft, the scan count fell deterministically from 200 to 20. Five post-change
+runs took 6.67, 4.20, 4.31, 4.06, and 4.18 ms (4.20 ms median), compared with the
+62.74 ms baseline. Tests lock the two-refreshes-per-second ceiling, warm-up and
+pause-reset behavior, WPM calculation, and localized word semantics. A Release
+Instruments trace remains necessary to connect this reduced work to frame time.
 
 ### Loop 2: window frame persistence
 

@@ -48,32 +48,40 @@ extension AppState {
 
     /// Monkeytype-style WPM: hide for the first ~5s warm-up window, reset
     /// the session if the user paused longer than 15s, otherwise the simple
-    /// `words / elapsed_minutes` average since session start.
-    func updateTypingStats() {
-        let now = Date()
-        if let last = lastTypingUpdate, now.timeIntervalSince(last) > Self.typingPauseResetSeconds {
-            typingStartedAt = now
-        }
-        if typingStartedAt == nil { typingStartedAt = now }
-        lastTypingUpdate = now
+    /// `words / elapsed_minutes` average since session start. The expensive
+    /// localized count refreshes at 2 Hz while timestamp tracking stays per-key.
+    func updateTypingStats(at now: Date = Date()) {
+        updateTypingSession(at: now)
         guard let started = typingStartedAt else { return }
         let elapsed = now.timeIntervalSince(started)
-        if elapsed < Self.typingWarmupSeconds {
-            wordsPerMinute = 0
+        guard elapsed >= Self.typingWarmupSeconds else {
+            if wordsPerMinute != 0 { wordsPerMinute = 0 }
             return
         }
-        wordsPerMinute = Double(countWords(inputText)) / (elapsed / 60)
+        guard shouldRefreshTypingStats(at: now) else { return }
+        lastTypingStatsRefresh = now
+        wordsPerMinute = Double(wordCounter.countWords(in: inputText)) / (elapsed / 60)
     }
 
     static let typingWarmupSeconds: TimeInterval = 5
     static let typingPauseResetSeconds: TimeInterval = 15
+    static let typingStatsRefreshSeconds: TimeInterval = 0.5
 
-    func countWords(_ text: String) -> Int {
-        let ns = text as NSString
-        var count = 0
-        ns.enumerateSubstrings(in: NSRange(location: 0, length: ns.length), options: [.byWords, .localized]) { _, _, _, _ in
-            count += 1
-        }
-        return count
+    private func updateTypingSession(at now: Date) {
+        resetTypingSessionAfterPause(at: now)
+        if typingStartedAt == nil { typingStartedAt = now }
+        lastTypingUpdate = now
+    }
+
+    private func resetTypingSessionAfterPause(at now: Date) {
+        guard let lastTypingUpdate else { return }
+        guard now.timeIntervalSince(lastTypingUpdate) > Self.typingPauseResetSeconds else { return }
+        typingStartedAt = now
+        lastTypingStatsRefresh = nil
+    }
+
+    private func shouldRefreshTypingStats(at now: Date) -> Bool {
+        guard let lastTypingStatsRefresh else { return true }
+        return now.timeIntervalSince(lastTypingStatsRefresh) >= Self.typingStatsRefreshSeconds
     }
 }
