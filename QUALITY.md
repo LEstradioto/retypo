@@ -18,14 +18,17 @@ copy in `.githooks/pre-push`) runs `bin/quality` automatically.
 
 | Metric                         | Tool       | Threshold (per fn/file) | Baseline |
 |---                             |---         |---                      |---:      |
-| Cyclomatic complexity          | SwiftLint  | ≤ 6                     | 9        |
-| Function body length           | SwiftLint  | ≤ 15 lines              | 35       |
-| Type body length               | SwiftLint  | ≤ 100 lines             | 8        |
-| File length                    | SwiftLint  | ≤ 100 lines (200 hard)  | 13       |
+| Cyclomatic complexity          | SwiftLint  | ≤ 6                     | 3        |
+| Function body length           | SwiftLint  | ≤ 15 lines              | 14       |
+| Type body length               | SwiftLint  | ≤ 100 lines             | 7        |
+| File length                    | SwiftLint  | ≤ 100 lines (200 hard)  | 8        |
 | Function parameter count       | SwiftLint  | ≤ 4                     | 0 ✓      |
 | Force unwrapping               | SwiftLint  | none                    | 0 ✓      |
-| SwiftLint total warnings       | SwiftLint  | (ratchet only)          | 72       |
-| Unused declarations            | Periphery  | none                    | 4        |
+| Force casts                    | SwiftLint  | none                    | 0 ✓      |
+| Force tries                    | SwiftLint  | none                    | 0 ✓      |
+| SwiftLint total warnings       | SwiftLint  | (ratchet only)          | 40       |
+| Unused declarations            | Periphery  | none                    | 0 ✓      |
+| Line coverage                  | llvm-cov   | (ratchet only)          | 17.5%    |
 
 ### History
 
@@ -35,6 +38,7 @@ copy in `.githooks/pre-push`) runs `bin/quality` automatically.
 | 2026-05-06 (cleanup) | **0** | **0** | **0** | 9 | 35 | 13 ↑ | 8 | **4** | 0% |
 | 2026-05-06 (split) | **0** | **0** | **0** | **7** | **34** | **7** | 8 | **4** | **2.67%** |
 | 2026-05-06 (round 3) | **0** | **0** | **0** | **4** | **26** | **5** | **7** | **4** | **3.04%** |
+| 2026-09-02 (current) | **0** | **0** | **0** | **3** | **14** | 8 | **7** | **0** | **17.5%** |
 
 **Round 2 wins:**
 - `cyclomatic` 10 → 7 (refactored `keyDown` 18→8, `handlePanelShortcut` 14→7,
@@ -49,12 +53,12 @@ copy in `.githooks/pre-push`) runs `bin/quality` automatically.
 - Added `force_cast`, `force_try` as tracked metrics (already 0)
 
 **Remaining offenders to tackle next:**
-- `function_body_length` (34) — biggest remaining: SwiftUI `body` properties,
+- `function_body_length` (14) — biggest remaining: SwiftUI `body` properties,
   many in `RetypoView+Footer.swift` and AppState
-- `type_body_length` (8) — large structs/classes (AppState, RetypoView,
+- `type_body_length` (7) — large structs/classes (AppState, RetypoView,
   AppDelegate body, etc.)
-- Coverage is intentionally low (2.67%) — only pure-logic modules are tested.
-  Next: integration tests on AppState slices.
+- Coverage is intentionally low (17.5%). Next: integration tests on AppState
+  slices and more AppKit behavior tests.
 
 **Round 4 wins (architectural deepenings, applying the
 [improve-codebase-architecture skill](https://github.com/mattpocock/skills/blob/main/skills/engineering/improve-codebase-architecture/SKILL.md)):**
@@ -112,8 +116,8 @@ Pick *one* metric to actively improve per PR; let the others just hold steady.
 
 ## CI / hooks
 
-Not yet wired. Once the gate has held for ~a week of normal commits, add to
-`.git/hooks/pre-push`:
+CI is not yet wired. The local pre-push hook is installed from
+`.githooks/pre-push` and runs:
 
 ```bash
 #!/usr/bin/env bash
