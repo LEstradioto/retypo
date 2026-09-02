@@ -91,7 +91,8 @@ final class TypingStatsTests: XCTestCase {
         AppState(
             settings: RetypoSettings(),
             draftPersistence: RecordingDraftPersistence(),
-            wordCounter: wordCounter
+            wordCounter: wordCounter,
+            settingsPersistence: RecordingSettingsPersistence()
         )
     }
 }

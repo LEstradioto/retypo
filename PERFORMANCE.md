@@ -35,8 +35,9 @@ These are code-review findings, not measured bottlenecks.
    keystroke and performed a full localized word scan after the warm-up window.
    Loop 1 moved the draft write off the main actor and bounds the word scan to
    two refreshes per second.
-2. Window move and resize callbacks synchronously encode and atomically write the
-   settings file for every callback.
+2. Window move and resize callbacks previously encoded and atomically wrote the
+   settings file for every callback. Loop 2 now coalesces frame-only changes and
+   flushes the final frame at interaction/lifecycle boundaries.
 3. Most views observe one large `AppState`. Changes from `CostTracker` and
    `LLMSession` are forwarded through `AppState.objectWillChange`, which can make
    unrelated state changes re-evaluate broad SwiftUI subtrees.
@@ -156,6 +157,26 @@ or termination.
 
 Success signal: one bounded settings write per interaction without losing the
 last window frame.
+
+#### Frame-write pass — 2026-09-02
+
+The baseline used the production `PersistedFile<RetypoSettings>` against an
+isolated temporary file. Five runs of 200 frame mutations plus settings writes
+took 39.43, 37.90, 36.26, 35.79, and 34.84 ms (36.26 ms median), and performed
+200 encodes and atomic writes.
+
+Frame callbacks now update the in-memory setting and debounce persistence for
+300 ms. Live-resize end, panel hide/close, and normal termination synchronously
+flush the final pending frame. Unchanged callbacks are ignored. Other settings
+continue to save immediately, so this pass does not alter preference semantics.
+`SettingsPersisting` gives AppState tests a named in-memory fake instead of the
+live user file.
+
+Five post-change runs of 200 callback schedules took 0.37, 0.33, 0.33, 0.38, and
+0.32 ms (0.33 ms median), excluding the one final persistence call. A regression
+test verifies 200 callbacks cause zero immediate writes and exactly one final
+write with the last frame. This confirms write amplification is removed; a live
+AppKit File Activity trace remains the end-to-end validation.
 
 ### Loop 3: SwiftUI change locality
 

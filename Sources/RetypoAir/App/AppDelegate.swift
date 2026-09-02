@@ -49,8 +49,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
 
     func applicationWillTerminate(_ notification: Notification) {
-        guard let draftPersistence = state?.draftPersistence else { return }
-        draftPersistence.flush()
+        state?.flushPendingPanelFrame()
+        state?.draftPersistence.flush()
     }
 
     @objc private func quitApp() {
@@ -78,6 +78,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if let previousApplication, !previousApplication.isTerminated {
             previousApplication.activate(options: [.activateIgnoringOtherApps])
         }
+        state?.flushPendingPanelFrame()
         state?.draftPersistence.flush()
     }
 
@@ -160,7 +161,14 @@ extension AppDelegate: NSWindowDelegate {
     func windowDidBecomeKey(_ notification: Notification) { focusEditorIfPossible() }
     func windowDidMove(_ notification: Notification) { persistFrame(); auxiliaryPanels?.repositionCandidatesIfVisible() }
     func windowDidResize(_ notification: Notification) { persistFrame(); auxiliaryPanels?.repositionCandidatesIfVisible() }
-    func windowWillClose(_ notification: Notification) { persistFrame() }
+    func windowDidEndLiveResize(_ notification: Notification) {
+        persistFrame()
+        state?.flushPendingPanelFrame()
+    }
+    func windowWillClose(_ notification: Notification) {
+        persistFrame()
+        state?.flushPendingPanelFrame()
+    }
 
     private func persistFrame() {
         guard let frame = panel?.frame, let state else { return }

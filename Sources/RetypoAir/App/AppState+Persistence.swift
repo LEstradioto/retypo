@@ -3,7 +3,7 @@ import AppKit
 
 extension AppState {
     func saveSettings() {
-        SettingsStore.save(settings)
+        settingsPersistence.save(settings)
     }
 
     func saveModes() {
@@ -24,7 +24,23 @@ extension AppState {
     }
 
     func updatePanelFrame(_ frame: NSRect) {
-        settings.panelFrame = PanelFrame(frame)
+        let panelFrame = PanelFrame(frame)
+        guard panelFrame != settings.panelFrame else { return }
+        settings.panelFrame = panelFrame
+        panelFrameSavePending = true
+        panelFrameDebouncer.schedule(milliseconds: 300) { [weak self] in
+            self?.persistPendingPanelFrame()
+        }
+    }
+
+    func flushPendingPanelFrame() {
+        panelFrameDebouncer.cancel()
+        persistPendingPanelFrame()
+    }
+
+    private func persistPendingPanelFrame() {
+        guard panelFrameSavePending else { return }
+        panelFrameSavePending = false
         saveSettings()
     }
 

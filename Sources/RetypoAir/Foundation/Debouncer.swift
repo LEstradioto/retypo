@@ -13,4 +13,9 @@ final class Debouncer {
             } catch { }
         }
     }
+
+    func cancel() {
+        task?.cancel()
+        task = nil
+    }
 }

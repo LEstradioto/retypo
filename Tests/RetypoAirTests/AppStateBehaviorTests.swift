@@ -21,9 +21,14 @@ final class MockPanelHost: PanelHost {
 @MainActor
 final class AppStateBehaviorTests: XCTestCase {
     private func makeState(
-        draftPersistence: RecordingDraftPersistence = RecordingDraftPersistence()
+        draftPersistence: RecordingDraftPersistence = RecordingDraftPersistence(),
+        settingsPersistence: RecordingSettingsPersistence = RecordingSettingsPersistence()
     ) -> (AppState, MockPanelHost) {
-        let state = AppState(settings: RetypoSettings(), draftPersistence: draftPersistence)
+        let state = AppState(
+            settings: RetypoSettings(),
+            draftPersistence: draftPersistence,
+            settingsPersistence: settingsPersistence
+        )
         let host = MockPanelHost()
         state.host = host
         return (state, host)
@@ -139,7 +144,11 @@ final class AppStateBehaviorTests: XCTestCase {
     }
 
     func testHostIsWeaklyHeld() {
-        let state = AppState(settings: RetypoSettings(), draftPersistence: RecordingDraftPersistence())
+        let state = AppState(
+            settings: RetypoSettings(),
+            draftPersistence: RecordingDraftPersistence(),
+            settingsPersistence: RecordingSettingsPersistence()
+        )
         do {
             let host = MockPanelHost()
             state.host = host

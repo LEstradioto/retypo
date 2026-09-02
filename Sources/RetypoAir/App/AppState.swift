@@ -43,11 +43,13 @@ final class AppState: ObservableObject {
     let llm = LLMSession()
     let draftPersistence: DraftPersisting
     let wordCounter: WordCounting
+    let settingsPersistence: SettingsPersisting
 
     weak var host: PanelHost?
 
     let debouncer = Debouncer()
     let draftHistoryDebouncer = Debouncer()
+    let panelFrameDebouncer = Debouncer()
     var lastAutoSubmittedHash: Int?
     var suppressNextInputChange = false
     var typingStartedAt: Date?
@@ -56,17 +58,20 @@ final class AppState: ObservableObject {
     /// step away from the keyboard.
     var lastTypingUpdate: Date?
     var lastTypingStatsRefresh: Date?
+    var panelFrameSavePending = false
     var editor = EditorEngine(limit: 50)
     private var cancellables = Set<AnyCancellable>()
 
     init(
         settings: RetypoSettings,
         draftPersistence: DraftPersisting = CoalescingDraftPersistence(),
-        wordCounter: WordCounting = LocalizedWordCounter()
+        wordCounter: WordCounting = LocalizedWordCounter(),
+        settingsPersistence: SettingsPersisting = FileSettingsPersistence()
     ) {
         self.settings = settings
         self.draftPersistence = draftPersistence
         self.wordCounter = wordCounter
+        self.settingsPersistence = settingsPersistence
         self.actions = EditActionStore.load()
         self.history = HistoryStore.load()
         let (loadedPricing, pricingChanged) = Self.loadedPricing()
