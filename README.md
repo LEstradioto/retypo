@@ -9,18 +9,18 @@ Tiny macOS floating textbox. Run saved prompts on selected text (from any app or
 >
 > Built for me: global shortcut, small textbox, snappy nav, saved prompts, clipboard. That's it.
 >
-> macOS only. No `.app` installer or signing, you run the dev script. Local-first: settings, drafts, history, API keys all live under `~/.retypo-air/`. No telemetry.
+> macOS only. No notarized installer; you run the dev script, which uses a local Apple Development identity when available. Local-first: settings, drafts, history, API keys all live under `~/.retypo-air/`. No telemetry.
 
 ## Why
 
 I keep editing more of my writing through LLMs. Tried voice (Handy is installed), kept drifting back to typing: voice felt like it was sending too much noise into the model. Probably because I write better than I think out loud, and I still don't write well enough.
 
-Other reason: typing long prompts into CLI agents like Codex or Claude Code, then losing the whole thing to a stray keystroke that wipes the input, a crash, or accidentally killing the terminal. Not undoable, gone. Retypo writes every keystroke to `draft.txt` and snapshots up to 20 paused-state versions of the draft, so the worst case is reopening the panel and picking a snapshot from Settings.
+Other reason: typing long prompts into CLI agents like Codex or Claude Code, then losing the whole thing to a stray keystroke that wipes the input, a crash, or accidentally killing the terminal. Not undoable, gone. Retypo queues every edit and atomically persists the latest draft, then snapshots up to 20 paused-state versions, so the normal recovery path is reopening the panel and picking a snapshot from Settings.
 
 ## Caveats
 
 - macOS 13+, Swift 5.9+, Xcode CLT or Xcode.
-- Selection import (`Cmd+Shift+Space` from another app) needs Accessibility permission. Grant once when prompted; pick `build-dev/RetypoAir-dev.app`.
+- Selection import (`Cmd+Shift+Space` from another app) needs Accessibility permission. Grant once when prompted; pick the copy you launch (`build-dev/RetypoAir-dev.app`, or `/Applications/RetypoAir-dev.app` when installed). Developer signing keeps the permission stable across rebuilds; without a local signing identity, macOS may ask again after the binary changes.
 - Terminal prompt import for Codex/Claude Code uses the terminal's accessible text buffer and is on by default.
 - VS Code integrated terminal import is experimental and on by default in Settings. It briefly opens VS Code Accessible View with `Option+F2`, reads the buffer through Accessibility, then presses `Esc`.
 - BYO API key (Groq, Anthropic, OpenAI, OpenRouter) **or** your existing Claude Code / Codex subscription through the signed-in CLI. See [Subscription providers](#subscription-providers-claude-code--codex).
@@ -30,6 +30,8 @@ Other reason: typing long prompts into CLI agents like Codex or Claude Code, the
 ```bash
 cp .env.example .env       # add at least one *_API_KEY. Load order: shell env, .env in CWD, ~/.retypo-air/.env. First wins.
 scripts/dev-app.sh         # builds + opens build-dev/RetypoAir-dev.app
+RETYPO_BUILD_CONFIGURATION=release scripts/dev-app.sh  # optimized local app
+RETYPO_BUILD_CONFIGURATION=release RETYPO_INSTALL_APP=1 scripts/dev-app.sh  # install + open /Applications copy
 ```
 
 In Settings, pick a provider and click Refresh to load its models.

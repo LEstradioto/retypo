@@ -4,20 +4,30 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APP_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-mkdir -p "$APP_DIR/.swift-home" "$APP_DIR/.swiftpm-modulecache" "$APP_DIR/.clang-cache"
+mkdir -p "$APP_DIR/.swiftpm-modulecache" "$APP_DIR/.clang-cache"
 
 export SWIFTPM_MODULECACHE_OVERRIDE="$APP_DIR/.swiftpm-modulecache"
 export CLANG_MODULE_CACHE_PATH="$APP_DIR/.clang-cache"
-export HOME="${HOME:-$APP_DIR/.swift-home}"
+
+RETYPO_BUILD_CONFIGURATION="${RETYPO_BUILD_CONFIGURATION:-debug}"
+if [[ "$RETYPO_BUILD_CONFIGURATION" != "debug" && "$RETYPO_BUILD_CONFIGURATION" != "release" ]]; then
+  echo "Invalid RETYPO_BUILD_CONFIGURATION '$RETYPO_BUILD_CONFIGURATION'; expected 'debug' or 'release'." >&2
+  exit 2
+fi
+RETYPO_INSTALL_APP="${RETYPO_INSTALL_APP:-0}"
+if [[ "$RETYPO_INSTALL_APP" != "0" && "$RETYPO_INSTALL_APP" != "1" ]]; then
+  echo "Invalid RETYPO_INSTALL_APP '$RETYPO_INSTALL_APP'; expected '0' or '1'." >&2
+  exit 2
+fi
 
 osascript -e 'tell application id "app.retypoair.dev" to quit' >/dev/null 2>&1 || true
 pkill -f '/RetypoAir($| )' >/dev/null 2>&1 || true
 pkill -f 'swift run.*RetypoAir' >/dev/null 2>&1 || true
 
 cd "$APP_DIR"
-swift build -c debug
+swift build -c "$RETYPO_BUILD_CONFIGURATION"
 
-BIN_DIR="$(swift build -c debug --show-bin-path)"
+BIN_DIR="$(swift build -c "$RETYPO_BUILD_CONFIGURATION" --show-bin-path)"
 APP_BUNDLE="$APP_DIR/build-dev/RetypoAir-dev.app"
 CONTENTS_DIR="$APP_BUNDLE/Contents"
 MACOS_DIR="$CONTENTS_DIR/MacOS"
@@ -91,11 +101,31 @@ for bundle_path in "$BIN_DIR"/*.bundle; do
   cp -R "$bundle_path" "$RESOURCES_DIR/"
 done
 
-codesign --force --deep -s - "$APP_BUNDLE" >/dev/null 2>&1 || true
+RETYPO_SIGNING_IDENTITY="${RETYPO_CODESIGN_IDENTITY:-}"
+if [[ -z "$RETYPO_SIGNING_IDENTITY" ]]; then
+  RETYPO_SIGNING_IDENTITY="$(security find-identity -v -p codesigning | awk -F '"' '/Apple Development:/{print $2; exit}')"
+fi
 
-echo "Built: $APP_BUNDLE"
-echo "Open it, then grant Accessibility permission to 'Retypo Air Dev' if prompted."
+if [[ -n "$RETYPO_SIGNING_IDENTITY" ]]; then
+  codesign --force --deep --timestamp=none --sign "$RETYPO_SIGNING_IDENTITY" "$APP_BUNDLE"
+  echo "Signed: $RETYPO_SIGNING_IDENTITY"
+else
+  codesign --force --deep --timestamp=none --sign - "$APP_BUNDLE"
+  echo "Warning: no Apple Development identity found; Accessibility permission may reset after rebuilds." >&2
+fi
+codesign --verify --deep --strict "$APP_BUNDLE"
+
+echo "Built ($RETYPO_BUILD_CONFIGURATION): $APP_BUNDLE"
+RETYPO_APP_TO_OPEN="$APP_BUNDLE"
+if [[ "$RETYPO_INSTALL_APP" == "1" ]]; then
+  RETYPO_INSTALLED_APP="/Applications/RetypoAir-dev.app"
+  ditto "$APP_BUNDLE" "$RETYPO_INSTALLED_APP"
+  codesign --verify --deep --strict "$RETYPO_INSTALLED_APP"
+  RETYPO_APP_TO_OPEN="$RETYPO_INSTALLED_APP"
+  echo "Installed: $RETYPO_INSTALLED_APP"
+fi
+echo "Open $RETYPO_APP_TO_OPEN, then grant Accessibility permission to 'Retypo Air Dev' if prompted."
 
 if [[ "${RETYPO_OPEN_APP:-1}" != "0" ]]; then
-  open -n "$APP_BUNDLE" --args "$@"
+  open -n "$RETYPO_APP_TO_OPEN" --args "$@"
 fi
