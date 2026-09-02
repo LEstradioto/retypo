@@ -48,6 +48,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
 
+    func applicationWillTerminate(_ notification: Notification) {
+        guard let draftPersistence = state?.draftPersistence else { return }
+        draftPersistence.flush()
+    }
+
     @objc private func quitApp() {
         NSApp.terminate(nil)
     }
@@ -73,6 +78,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if let previousApplication, !previousApplication.isTerminated {
             previousApplication.activate(options: [.activateIgnoringOtherApps])
         }
+        state?.draftPersistence.flush()
     }
 
     private func togglePanel() {

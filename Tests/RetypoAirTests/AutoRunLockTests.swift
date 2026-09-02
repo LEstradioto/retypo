@@ -9,7 +9,7 @@ final class AutoRunLockTests: XCTestCase {
         var settings = RetypoSettings()
         settings.provider = provider
         settings.autoCorrect = autoCorrect
-        return AppState(settings: settings)
+        return AppState(settings: settings, draftPersistence: RecordingDraftPersistence())
     }
 
     func testAutoRunFollowsThePreferenceForAPIProviders() {

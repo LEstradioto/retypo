@@ -67,7 +67,7 @@ extension AppState {
         wordsChangedLast = snapshot.wordsChangedLast
         lastAutoSubmittedHash = snapshot.lastAutoSubmittedHash
         typingStartedAt = snapshot.typingStartedAt ?? Date()
-        DraftStore.save(inputText)
+        draftPersistence.save(inputText)
         host?.setCandidatesVisible(showCandidateOverlay)
     }
 }

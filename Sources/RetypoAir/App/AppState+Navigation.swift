@@ -129,7 +129,7 @@ extension AppState {
         guard candidateResults.indices.contains(selectedCandidateIndex) else { return }
         pushEditorUndoSnapshot()
         inputText = candidateResults[selectedCandidateIndex].output
-        DraftStore.save(inputText)
+        draftPersistence.save(inputText)
         setCandidateOverlayVisible(false)
         status = "Applied candidate"
     }

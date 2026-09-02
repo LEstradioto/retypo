@@ -41,8 +41,14 @@ extension AppState {
         settings.modelByProvider[entry.provider] = entry.model
         settings.currentActionID = entry.actionID
         status = "Restored"
-        DraftStore.save(inputText)
+        draftPersistence.save(inputText)
         saveSettings()
+    }
+
+    func restoreDraftSnapshot(_ snapshot: DraftSnapshot) {
+        inputText = snapshot.text
+        draftPersistence.save(inputText)
+        status = "Draft restored"
     }
 
     func isAcceptedModel(_ modelID: String, provider: ProviderKind? = nil) -> Bool {

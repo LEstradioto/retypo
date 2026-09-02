@@ -101,17 +101,13 @@ extension SettingsView {
             }
             Spacer()
             Button {
-                state.inputText = snapshot.text
-                DraftStore.save(snapshot.text)
-                state.status = "Draft restored"
+                state.restoreDraftSnapshot(snapshot)
             } label: {
                 Image(systemName: "arrow.uturn.backward")
             }
             .buttonStyle(SettingsIconButtonStyle())
             .settingsFocus(draftFocusID(snapshot.id), radius: 13, keyboardFocusable: true, activate: {
-                state.inputText = snapshot.text
-                DraftStore.save(snapshot.text)
-                state.status = "Draft restored"
+                state.restoreDraftSnapshot(snapshot)
                 return true
             })
         }

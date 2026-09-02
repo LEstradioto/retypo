@@ -28,7 +28,7 @@ copy in `.githooks/pre-push`) runs `bin/quality` automatically.
 | Force tries                    | SwiftLint  | none                    | 0 ✓      |
 | SwiftLint total warnings       | SwiftLint  | (ratchet only)          | 40       |
 | Unused declarations            | Periphery  | none                    | 0 ✓      |
-| Line coverage                  | llvm-cov   | (ratchet only)          | 17.74%   |
+| Line coverage                  | llvm-cov   | (ratchet only)          | 19.11%   |
 
 ### History
 
@@ -38,7 +38,8 @@ copy in `.githooks/pre-push`) runs `bin/quality` automatically.
 | 2026-05-06 (cleanup) | **0** | **0** | **0** | 9 | 35 | 13 ↑ | 8 | **4** | 0% |
 | 2026-05-06 (split) | **0** | **0** | **0** | **7** | **34** | **7** | 8 | **4** | **2.67%** |
 | 2026-05-06 (round 3) | **0** | **0** | **0** | **4** | **26** | **5** | **7** | **4** | **3.04%** |
-| 2026-09-02 (current) | **0** | **0** | **0** | **3** | **14** | 8 | **7** | **0** | **17.74%** |
+| 2026-09-02 (imports) | **0** | **0** | **0** | **3** | **14** | 8 | **7** | **0** | **17.74%** |
+| 2026-09-02 (draft persistence) | **0** | **0** | **0** | **3** | **14** | 8 | **7** | **0** | **19.11%** |
 
 **Round 2 wins:**
 - `cyclomatic` 10 → 7 (refactored `keyDown` 18→8, `handlePanelShortcut` 14→7,
@@ -57,7 +58,7 @@ copy in `.githooks/pre-push`) runs `bin/quality` automatically.
   many in `RetypoView+Footer.swift` and AppState
 - `type_body_length` (7) — large structs/classes (AppState, RetypoView,
   AppDelegate body, etc.)
-- Coverage is intentionally low (17.74%). Next: integration tests on AppState
+- Coverage is intentionally low (19.11%). Next: integration tests on AppState
   slices and more AppKit behavior tests.
 
 **Round 4 wins (architectural deepenings, applying the

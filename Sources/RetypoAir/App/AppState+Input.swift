@@ -43,7 +43,7 @@ extension AppState {
         wordsChangedLast = 0
         lastAutoSubmittedHash = nil
         typingStartedAt = Date()
-        DraftStore.save(inputText)
+        draftPersistence.save(inputText)
         status = "Imported text from \(source)"
     }
 
@@ -51,7 +51,7 @@ extension AppState {
         commitNonRedoEdit()
         if typingStartedAt == nil { typingStartedAt = Date() }
         updateTypingStats()
-        DraftStore.save(inputText)
+        draftPersistence.save(inputText)
         scheduleDraftSnapshot()
         inlineHighlightRanges = []
         guard !suppressNextInputChange else {

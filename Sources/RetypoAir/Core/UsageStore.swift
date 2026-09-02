@@ -115,21 +115,3 @@ struct PendingImport: Identifiable, Hashable {
     var text: String
     var source: String
 }
-
-/// Plain-text draft (not JSON, kept separate from the `PersistedFile<T>` family).
-enum DraftStore {
-    static var fileURL: URL { AppFiles.url("draft.txt") }
-
-    static func load() -> String {
-        (try? String(contentsOf: fileURL, encoding: .utf8)) ?? ""
-    }
-
-    static func save(_ text: String) {
-        do {
-            try FileManager.default.createDirectory(at: AppFiles.directory, withIntermediateDirectories: true)
-            try text.write(to: fileURL, atomically: true, encoding: .utf8)
-        } catch {
-            fputs("RetypoAir draft save failed: \(error)\n", stderr)
-        }
-    }
-}

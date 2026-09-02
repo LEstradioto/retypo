@@ -21,7 +21,7 @@ extension AppState {
         inlineHighlightRanges = InlineDiffService.changedRanges(original: original, corrected: text)
         suppressNextInputChange = true
         inputText = text
-        DraftStore.save(inputText)
+        draftPersistence.save(inputText)
         lastAutoSubmittedHash = inputText.hashValue
     }
 

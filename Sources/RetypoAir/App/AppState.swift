@@ -41,6 +41,7 @@ final class AppState: ObservableObject {
 
     let cost: CostTracker
     let llm = LLMSession()
+    let draftPersistence: DraftPersisting
 
     weak var host: PanelHost?
 
@@ -56,14 +57,18 @@ final class AppState: ObservableObject {
     var editor = EditorEngine(limit: 50)
     private var cancellables = Set<AnyCancellable>()
 
-    init(settings: RetypoSettings) {
+    init(
+        settings: RetypoSettings,
+        draftPersistence: DraftPersisting = CoalescingDraftPersistence()
+    ) {
         self.settings = settings
+        self.draftPersistence = draftPersistence
         self.actions = EditActionStore.load()
         self.history = HistoryStore.load()
         let (loadedPricing, pricingChanged) = Self.loadedPricing()
         self.cost = CostTracker(initialPricing: loadedPricing, initialUsageLedger: UsageLedgerStore.load())
         self.draftSnapshots = DraftSnapshotStore.load()
-        self.inputText = DraftStore.load()
+        self.inputText = draftPersistence.load()
         if pricingChanged { PricingStore.save(loadedPricing) }
         rebroadcastCostChanges()
     }

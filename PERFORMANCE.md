@@ -31,9 +31,10 @@ Not measured yet:
 
 These are code-review findings, not measured bottlenecks.
 
-1. `AppState.onInputChanged` atomically writes `draft.txt` on every keystroke and
-   performs a full localized word scan after the warm-up window. Both happen on
-   the main actor and scale with draft length.
+1. `AppState.onInputChanged` previously atomically wrote `draft.txt` on every
+   keystroke and still performs a full localized word scan after the warm-up
+   window. Loop 1 moved the draft write off the main actor; the word scan remains
+   to be measured.
 2. Window move and resize callbacks synchronously encode and atomically write the
    settings file for every callback.
 3. Most views observe one large `AppState`. Changes from `CostTracker` and
@@ -97,7 +98,35 @@ Activity. If the static finding is confirmed:
 - add deterministic tests with a named in-memory fake.
 
 Success signal: no synchronous filesystem call on the main thread during typing,
-lower keypress-to-frame latency, and unchanged recovery behavior.
+lower keypress-to-frame latency, and a final-draft flush on normal hide or quit
+with any abrupt-failure recovery window documented.
+
+#### Draft-write pass — 2026-09-02
+
+The initial measurement isolated the caller cost of the same atomic-write
+operation used by `DraftStore`. Five runs of 200 sequential writes of a 50 KB
+draft took 67.72, 134.30,
+80.47, 61.42, and 72.99 ms (72.99 ms median). The synthetic size makes the
+blocking work visible; it is not a claim about typical draft size or frame time.
+
+`AppState` now receives a project-owned `DraftPersisting` dependency. Production
+uses a utility-priority serial queue, and only the latest waiting value is kept
+while a write is in flight. All editor restore/import paths use the same
+persistence path. Hiding or normally terminating the app flushes queued work.
+
+A focused post-change benchmark held the write backend busy to isolate 200
+main-actor `save` calls. Five runs took 0.04, 0.03, 0.03, 0.03, and 0.03 ms
+(0.03 ms median). This proves the filesystem wait left the typing caller; it does
+not measure total storage latency. Deterministic tests verify background writes,
+burst coalescing, final-value ordering, injected draft loading, and lifecycle
+flushes.
+
+Recovery remains immediate after each completed background write and on normal
+hide/quit. An abrupt process or system failure can lose the most recent value
+while it is queued or in flight; this short window is the explicit cost of taking
+filesystem I/O off the typing path. A Release Instruments trace is still needed
+before claiming lower keypress-to-frame latency. The WPM scan remains the next
+typing pass.
 
 ### Loop 2: window frame persistence
 

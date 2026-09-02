@@ -20,8 +20,10 @@ final class MockPanelHost: PanelHost {
 
 @MainActor
 final class AppStateBehaviorTests: XCTestCase {
-    private func makeState() -> (AppState, MockPanelHost) {
-        let state = AppState(settings: RetypoSettings())
+    private func makeState(
+        draftPersistence: RecordingDraftPersistence = RecordingDraftPersistence()
+    ) -> (AppState, MockPanelHost) {
+        let state = AppState(settings: RetypoSettings(), draftPersistence: draftPersistence)
         let host = MockPanelHost()
         state.host = host
         return (state, host)
@@ -59,6 +61,38 @@ final class AppStateBehaviorTests: XCTestCase {
         let (state, host) = makeState()
         state.confirmPendingImport()
         XCTAssertEqual(host.importConfirmationHistory, [])
+    }
+
+    func testConfirmPendingImportPersistsWithoutTouchingLiveDraft() {
+        let draftPersistence = RecordingDraftPersistence()
+        let (state, host) = makeState(draftPersistence: draftPersistence)
+        state.pendingImport = PendingImport(text: "Paste me", source: "Clipboard")
+
+        state.confirmPendingImport()
+
+        XCTAssertEqual(state.inputText, "Paste me")
+        XCTAssertEqual(draftPersistence.savedTexts, ["Paste me"])
+        XCTAssertEqual(host.importConfirmationHistory, [false])
+    }
+
+    func testStateLoadsDraftFromInjectedPersistence() {
+        let draftPersistence = RecordingDraftPersistence(storedText: "Recovered")
+
+        let (state, _) = makeState(draftPersistence: draftPersistence)
+
+        XCTAssertEqual(state.inputText, "Recovered")
+    }
+
+    func testRestoreDraftSnapshotUsesInjectedPersistence() {
+        let draftPersistence = RecordingDraftPersistence()
+        let (state, _) = makeState(draftPersistence: draftPersistence)
+        let snapshot = DraftSnapshot(text: "Earlier draft")
+
+        state.restoreDraftSnapshot(snapshot)
+
+        XCTAssertEqual(state.inputText, "Earlier draft")
+        XCTAssertEqual(draftPersistence.savedTexts, ["Earlier draft"])
+        XCTAssertEqual(state.status, "Draft restored")
     }
 
     func testExternalImportAlwaysWaitsForConfirmation() {
@@ -105,7 +139,7 @@ final class AppStateBehaviorTests: XCTestCase {
     }
 
     func testHostIsWeaklyHeld() {
-        let state = AppState(settings: RetypoSettings())
+        let state = AppState(settings: RetypoSettings(), draftPersistence: RecordingDraftPersistence())
         do {
             let host = MockPanelHost()
             state.host = host
