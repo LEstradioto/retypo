@@ -18,20 +18,20 @@ struct ImportConfirmWindowView: View {
     private var content: some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Replace current draft?")
+                Text("Paste into Retypo Air?")
                     .font(.system(size: 13, weight: .semibold, design: .rounded))
                 Text(summary)
                     .font(.system(size: 10.5, weight: .medium, design: .monospaced))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
-                    .truncationMode(.middle)
+                    .truncationMode(.tail)
             }
             Spacer(minLength: 8)
             Button("Cancel") { state.cancelPendingImport() }
                 .buttonStyle(.borderless)
                 .font(.system(size: 11.5, weight: .semibold, design: .rounded))
                 .pointingCursor()
-            Button("Replace") { state.confirmPendingImport() }
+            Button("Paste") { state.confirmPendingImport() }
                 .buttonStyle(SettingsCapsuleButtonStyle(active: true))
                 .pointingCursor()
         }
@@ -41,9 +41,7 @@ struct ImportConfirmWindowView: View {
 
     private var summary: String {
         guard let pending = state.pendingImport else { return "No pending selection" }
-        let compact = pending.text
-            .replacingOccurrences(of: "\n", with: " ↵ ")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        return "Selection from \(pending.source) · \(pending.text.count)c · \(compact)"
+        let preview = ImportPreview.truncatedFirstVisibleLine(pending.text)
+        return "\(pending.source) · \(pending.text.count)c · \(preview)"
     }
 }

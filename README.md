@@ -94,7 +94,9 @@ When `Cmd+Shift+Space` from another app:
 4. **Synthetic `Cmd+C`** via AX-pressed Copy menu. Clipboard read then restored. Terminals, TUIs.
 5. **Existing clipboard**. Whatever was already copied.
 
-If a draft already exists, asks before replacing. Failures: `~/.retypo-air/import-debug.log`.
+Every imported value is previewed and asks for confirmation before it replaces
+the editor, including imports received while the editor is empty. Failures:
+`~/.retypo-air/import-debug.log`.
 
 ## Keyboard
 

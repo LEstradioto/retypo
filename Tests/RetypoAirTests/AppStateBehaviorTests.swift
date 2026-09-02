@@ -61,6 +61,24 @@ final class AppStateBehaviorTests: XCTestCase {
         XCTAssertEqual(host.importConfirmationHistory, [])
     }
 
+    func testExternalImportAlwaysWaitsForConfirmation() {
+        let (state, _) = makeState()
+        state.inputText = ""
+
+        XCTAssertTrue(state.receiveExternalImport("Clipboard text", source: "Safari"))
+        XCTAssertEqual(state.pendingImport?.text, "Clipboard text")
+        XCTAssertEqual(state.pendingImport?.source, "Safari")
+        XCTAssertEqual(state.inputText, "")
+    }
+
+    func testMatchingExternalImportStillWaitsForConfirmation() {
+        let (state, _) = makeState()
+        state.inputText = "Same text"
+
+        XCTAssertTrue(state.receiveExternalImport("Same text", source: "TextEdit"))
+        XCTAssertEqual(state.pendingImport?.text, "Same text")
+    }
+
     /// Regression for the ESC-in-candidates fix: clearCandidateResults wipes
     /// state but does NOT ask the host to hide the panel.
     func testClearCandidateResultsDoesNotHideOverlay() {

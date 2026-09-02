@@ -9,15 +9,9 @@ extension AppState {
             return false
         }
 
-        let existing = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !existing.isEmpty, inputText != text {
-            pendingImport = PendingImport(text: text, source: source)
-            status = "Confirm import from \(source)"
-            return true
-        }
-
-        importExternalText(text, source: source)
-        return false
+        pendingImport = PendingImport(text: text, source: source)
+        status = "Confirm import from \(source)"
+        return true
     }
 
     func confirmPendingImport() {
