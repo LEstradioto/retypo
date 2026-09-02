@@ -24,13 +24,14 @@ extension AppState {
         await runAction(currentAction, source: source)
     }
 
-    func correctAndMaybeCopy(source: String = "manual") async {
+    private func correctAndMaybeCopy(_ action: EditAction, source: String) async {
         guard let context = startCorrection(source: source) else { return }
+        let request = correctionRequest(action: action, model: context.model, original: context.original)
         do {
-            let response = try await llm.router.complete(correctionRequest(model: context.model, original: context.original))
+            let response = try await llm.router.complete(request)
             guard context.generation == llm.generation else { return }
             let parsed = parseCorrection(response.text) ?? (response.text.trimmingCharacters(in: .whitespacesAndNewlines), true, 0.5)
-            applyResult(ActionOutcome(text: parsed.corrected, original: context.original, changed: parsed.changed, response: response, action: currentAction, instruction: PromptTemplates.correctionSystem))
+            applyResult(ActionOutcome(text: parsed.corrected, original: context.original, changed: parsed.changed, response: response, action: action, instruction: request.system))
         } catch {
             guard context.generation == llm.generation else { return }
             report(error, while: "Correct")
@@ -40,7 +41,7 @@ extension AppState {
 
     func runAction(_ action: EditAction, source: String = "manual") async {
         if action.id == "correct" {
-            await correctAndMaybeCopy(source: source)
+            await correctAndMaybeCopy(action, source: source)
             return
         }
         if action.id == EditAction.freeformID {
@@ -121,9 +122,10 @@ extension AppState {
     private func runOneCandidate(_ action: EditAction, model: String, original: String) async {
         do {
             if action.id == "correct" {
-                let response = try await llm.router.complete(correctionRequest(model: model, original: original))
+                let request = correctionRequest(action: action, model: model, original: original)
+                let response = try await llm.router.complete(request)
                 let parsed = parseCorrection(response.text) ?? (response.text.trimmingCharacters(in: .whitespacesAndNewlines), true, 0.5)
-                appendCandidate(ActionOutcome(text: parsed.corrected, original: original, changed: parsed.changed, response: response, action: action, instruction: PromptTemplates.correctionSystem))
+                appendCandidate(ActionOutcome(text: parsed.corrected, original: original, changed: parsed.changed, response: response, action: action, instruction: request.system))
             } else {
                 guard let instruction = resolvedInstruction(for: action) else { return }
                 let response = try await llm.router.complete(editRequest(instruction: instruction, model: model, original: original))
@@ -171,11 +173,11 @@ extension AppState {
         return ActionContext(model: model, original: original, generation: llm.generation)
     }
 
-    private func correctionRequest(model: String, original: String) -> LLMRequest {
+    private func correctionRequest(action: EditAction, model: String, original: String) -> LLMRequest {
         LLMRequest(
             provider: settings.provider,
             model: model,
-            system: PromptTemplates.correctionSystem,
+            system: PromptTemplates.correctionSystem(instruction: action.instruction),
             user: PromptTemplates.correctionUser(original),
             maxTokens: max(512, min(4_000, original.count * 2)),
             temperature: 0

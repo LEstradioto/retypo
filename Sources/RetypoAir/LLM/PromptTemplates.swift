@@ -1,17 +1,28 @@
 import Foundation
 
 enum PromptTemplates {
-    static let correctionSystem = """
-You correct only typing mistakes in user prompts.
-Preserve language, slang, tone, abbreviations, file paths, commands, flags, identifiers, markdown, and intent.
-Do not translate. Do not improve style unless needed to fix a typo. Do not alter code blocks.
+    private static let correctionPrelude = """
+Edit the user's text according to the instruction below.
+Preserve file paths, commands, flags, identifiers, markdown, and code blocks unless the instruction explicitly asks otherwise.
+"""
+
+    private static let correctionContract = """
 Return JSON only with this exact schema:
 {"corrected":"...", "changed":true, "confidence":0.0}
 """
 
+    static func correctionSystem(instruction: String) -> String {
+        """
+\(correctionPrelude)
+Instruction:
+\(instruction)
+\(correctionContract)
+"""
+    }
+
     static func correctionUser(_ text: String) -> String {
         """
-Correct this text only for typos:
+Text to edit:
 
 \(text)
 """
