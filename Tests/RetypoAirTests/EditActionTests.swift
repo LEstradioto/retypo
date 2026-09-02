@@ -21,4 +21,26 @@ final class EditActionTests: XCTestCase {
         let decoded = try JSONDecoder().decode(EditAction.self, from: encoded)
         XCTAssertEqual(original, decoded)
     }
+
+    func testCustomizedDefaultDetectsInstructionChanges() {
+        var action = EditAction.defaults[0]
+        XCTAssertFalse(action.hasCustomizedDefault)
+        action.instruction = "Use my correction rules."
+        XCTAssertTrue(action.hasCustomizedDefault)
+    }
+
+    func testResetToDefaultRestoresFieldsAndPreservesEnabledState() {
+        var action = EditAction(id: "correct", title: "Mine", instruction: "Custom", isEnabled: false)
+        XCTAssertTrue(action.resetToDefault())
+        XCTAssertEqual(action.title, "Correct")
+        XCTAssertEqual(action.instruction, EditAction.defaults[0].instruction)
+        XCTAssertFalse(action.isEnabled)
+    }
+
+    func testCustomModeHasNoDefaultToReset() {
+        var action = EditAction(id: "mine", title: "Mine", instruction: "Custom")
+        XCTAssertFalse(action.hasCustomizedDefault)
+        XCTAssertFalse(action.resetToDefault())
+        XCTAssertEqual(action.instruction, "Custom")
+    }
 }

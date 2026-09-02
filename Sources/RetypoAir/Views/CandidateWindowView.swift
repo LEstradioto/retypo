@@ -2,6 +2,7 @@ import SwiftUI
 
 struct CandidateOverlayWindowView: View {
     @EnvironmentObject private var state: AppState
+    @State private var editingModeID: String?
     private let cardSpacing: CGFloat = 10
 
     var body: some View {
@@ -14,6 +15,9 @@ struct CandidateOverlayWindowView: View {
         }
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(Color.white.opacity(0.16), lineWidth: 1))
+        .onChange(of: state.showCandidateOverlay) { visible in
+            if !visible { editingModeID = nil }
+        }
     }
 
     @ViewBuilder
@@ -33,7 +37,7 @@ struct CandidateOverlayWindowView: View {
         HStack(spacing: 8) {
             Text(state.candidateResults.isEmpty ? "Run mode" : "Candidates")
                 .font(.system(size: 12, weight: .semibold, design: .rounded))
-            Text(state.candidateResults.isEmpty ? "Tab chooses mode · Enter runs · Cmd+Shift+Enter runs all" : "Tab selects + copies · Apply writes back")
+            Text(headerHint)
                 .font(.system(size: 10.5, weight: .medium, design: .monospaced))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
@@ -60,34 +64,30 @@ struct CandidateOverlayWindowView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(alignment: .top, spacing: cardSpacing) {
                         ForEach(Array(state.enabledActions.enumerated()), id: \.element.id) { index, action in
-                            VStack(alignment: .leading, spacing: 8) {
-                                HStack {
-                                    Text(action.title)
-                                        .font(.system(size: 12, weight: .semibold, design: .rounded))
-                                        .lineLimit(1)
-                                    Spacer()
-                                    if index == state.selectedLauncherModeIndex {
-                                        Text("selected")
-                                            .font(.system(size: 10, weight: .medium, design: .monospaced))
-                                            .foregroundStyle(Color.accentColor)
+                            LauncherModeCard(
+                                action: action,
+                                width: width,
+                                selected: index == state.selectedLauncherModeIndex,
+                                editing: editingModeID == action.id,
+                                select: {
+                                    state.selectedLauncherModeIndex = index
+                                    state.setCurrentAction(action.id)
+                                },
+                                edit: {
+                                    state.selectedLauncherModeIndex = index
+                                    state.setCurrentAction(action.id)
+                                    editingModeID = action.id
+                                },
+                                finishEditing: { editingModeID = nil },
+                                run: {
+                                    Task {
+                                        state.selectedLauncherModeIndex = index
+                                        await state.runSelectedLauncherMode()
                                     }
                                 }
-                                Text(action.instruction)
-                                    .font(.system(size: 11))
-                                    .foregroundStyle(.secondary)
-                                    .lineLimit(4)
-                                Spacer()
-                                Button("Run") { Task { state.selectedLauncherModeIndex = index; await state.runSelectedLauncherMode() } }
-                                    .buttonStyle(.borderless)
-                                    .pointingCursor()
-                            }
+                            )
+                            .environmentObject(state)
                             .id(action.id)
-                            .padding(10)
-                            .frame(width: width, height: 142)
-                            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(index == state.selectedLauncherModeIndex ? Color.accentColor.opacity(0.15) : Color.white.opacity(0.08)))
-                            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(index == state.selectedLauncherModeIndex ? Color.accentColor.opacity(0.55) : Color.white.opacity(0.12), lineWidth: 1))
-                            .onTapGesture { state.selectedLauncherModeIndex = index; state.setCurrentAction(action.id) }
-                            .pointingCursor()
                         }
                         Spacer(minLength: 0)
                     }
@@ -103,7 +103,13 @@ struct CandidateOverlayWindowView: View {
                 }
             }
         }
-        .frame(height: 146)
+        .frame(height: 180)
+    }
+
+    private var headerHint: String {
+        if !state.candidateResults.isEmpty { return "Tab selects + copies · Apply writes back" }
+        if editingModeID != nil { return "Changes save automatically · Esc closes" }
+        return "Tab chooses mode · Enter runs · pencil edits"
     }
 
     private var candidates: some View {

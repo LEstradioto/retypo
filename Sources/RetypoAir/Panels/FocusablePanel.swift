@@ -28,6 +28,7 @@ final class KeyableAuxiliaryPanel: NSPanel {
     }
 
     private func handlePanelShortcut(_ event: NSEvent) -> Bool {
+        if firstResponder is NSTextView { return handleTextEditingShortcut(event) }
         let mods = event.modifierFlags
         switch Int(event.keyCode) {
         case 48: return invokeTabHandler(shift: mods.contains(.shift))                          // tab
@@ -41,6 +42,15 @@ final class KeyableAuxiliaryPanel: NSPanel {
         case 53: return invoke(onCloseKey)                                                       // esc
         default: return false
         }
+    }
+
+    private func handleTextEditingShortcut(_ event: NSEvent) -> Bool {
+        let modifiers = event.modifierFlags
+        if event.keyCode == 2, modifiers.contains(.command) || modifiers.contains(.control) {
+            return invoke(onToggleCandidatesKey)
+        }
+        if event.keyCode == 53 { return invoke(onCloseKey) }
+        return false
     }
 
     private func invokeTabHandler(shift: Bool) -> Bool {

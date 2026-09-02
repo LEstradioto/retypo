@@ -26,6 +26,18 @@ struct EditAction: Identifiable, Hashable, Codable {
         EditAction(id: "caveman", title: "Caveman", instruction: "Rewrite the text in an intentionally simple caveman style. Keep the meaning, use short blunt words, and avoid complex grammar."),
         EditAction(id: freeformID, title: "Freeform", instruction: "")
     ]
+
+    var hasCustomizedDefault: Bool {
+        guard let defaultAction = Self.defaults.first(where: { $0.id == id }) else { return false }
+        return title != defaultAction.title || instruction != defaultAction.instruction
+    }
+
+    mutating func resetToDefault() -> Bool {
+        guard let defaultAction = Self.defaults.first(where: { $0.id == id }) else { return false }
+        title = defaultAction.title
+        instruction = defaultAction.instruction
+        return true
+    }
 }
 
 enum EditActionStore {
