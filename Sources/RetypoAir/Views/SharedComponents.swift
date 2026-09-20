@@ -4,26 +4,22 @@ import AppKit
 extension Color {
     /// House accent for custom chrome (links, pills, focus, alerts).
     /// Orange holds contrast on gray in both Light and Dark, where the
-    /// system blue washed out. System controls (Toggle, Picker) keep the
-    /// macOS default.
+    /// system blue washed out. System controls (Toggle, Picker) follow
+    /// the root `.tint` instead.
     static var retypoAccent: Color { .orange }
 }
 
-struct VisualEffectView: NSViewRepresentable {    var material: NSVisualEffectView.Material
-    var blendingMode: NSVisualEffectView.BlendingMode
-
-    func makeNSView(context: Context) -> NSVisualEffectView {
-        let view = NSVisualEffectView()
-        view.material = material
-        view.blendingMode = blendingMode
-        view.state = .active
-        return view
-    }
-
-    func updateNSView(_ view: NSVisualEffectView, context: Context) {
-        view.material = material
-        view.blendingMode = blendingMode
-    }
+/// Solid adaptive surfaces. Everything here resolves through NSColor, so
+/// Light/Dark follow the theme with no translucency and no opacity hacks —
+/// ghost panels were unreadable over arbitrary desktop content.
+enum Palette {
+    static var window: Color { Color(nsColor: .windowBackgroundColor) }
+    static var editor: Color { Color(nsColor: .textBackgroundColor) }
+    static var card: Color { Color(nsColor: .controlBackgroundColor) }
+    static var hairline: Color { Color(nsColor: .separatorColor) }
+    static var primaryText: Color { Color(nsColor: .labelColor) }
+    static var secondaryText: Color { Color(nsColor: .secondaryLabelColor) }
+    static var tertiaryText: Color { Color(nsColor: .tertiaryLabelColor) }
 }
 
 struct PointingCursorModifier: ViewModifier {
@@ -52,14 +48,13 @@ struct SettingsCard<Content: View>: View {
         VStack(alignment: .leading, spacing: 12) {
             Text(title)
                 .font(.system(size: 13, weight: .semibold, design: .monospaced))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Palette.secondaryText)
             content
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 22, style: .continuous).fill(Color.white.opacity(0.13)))
-        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(Color.white.opacity(0.18), lineWidth: 1))
-        .shadow(color: Color.retypoAccent.opacity(0.055), radius: 24, x: 0, y: 14)
+        .background(RoundedRectangle(cornerRadius: 22, style: .continuous).fill(Palette.card))
+        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(Palette.hairline, lineWidth: 1))
     }
 }
 
@@ -72,7 +67,7 @@ struct LabeledShortcutField: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(label)
                 .font(.system(size: 11, weight: .semibold, design: .monospaced))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Palette.secondaryText)
             TextField("cmd+opt+]", text: $text)
                 .textFieldStyle(.roundedBorder)
                 .settingsFocus(focusID, radius: 6)
@@ -87,11 +82,11 @@ struct SettingsCapsuleButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.system(size: 12, weight: .semibold, design: .rounded))
-            .foregroundStyle(active ? Color.white : Color.primary)
+            .foregroundStyle(active ? Color.white : Palette.primaryText)
             .padding(.horizontal, 12)
             .padding(.vertical, 7)
-            .background(Capsule(style: .continuous).fill(active ? Color.retypoAccent.opacity(configuration.isPressed ? 0.68 : 0.84) : Color.white.opacity(configuration.isPressed ? 0.12 : 0.08)))
-            .overlay(Capsule(style: .continuous).strokeBorder(Color.white.opacity(0.13), lineWidth: 1))
+            .background(Capsule(style: .continuous).fill(active ? Color.retypoAccent : Palette.card))
+            .overlay(Capsule(style: .continuous).strokeBorder(active ? Color.clear : Palette.hairline, lineWidth: 1))
             .scaleEffect(configuration.isPressed ? 0.98 : 1)
     }
 }
@@ -102,9 +97,10 @@ struct SettingsIconButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.system(size: 12, weight: .semibold))
-            .foregroundStyle(destructive ? Color.red.opacity(0.85) : Color.primary.opacity(0.80))
+            .foregroundStyle(destructive ? Color.red : Palette.primaryText)
             .frame(width: 26, height: 24)
-            .background(Circle().fill((destructive ? Color.red : Color.retypoAccent).opacity(configuration.isPressed ? 0.18 : 0.09)))
+            .background(Circle().fill(destructive ? Color.red.opacity(0.12) : Palette.window))
+            .overlay(Circle().strokeBorder(Palette.hairline, lineWidth: 1))
             .scaleEffect(configuration.isPressed ? 0.96 : 1)
             .pointingCursor()
     }

@@ -12,14 +12,12 @@ struct FreeformPromptWindowView: View {
 
     var body: some View {
         ZStack {
-            VisualEffectView(material: .hudWindow, blendingMode: .behindWindow)
-                .ignoresSafeArea()
-            LinearGradient(colors: [Color.retypoAccent.opacity(0.12), Color.black.opacity(0.10)], startPoint: .topLeading, endPoint: .bottomTrailing)
-                .ignoresSafeArea()
+            Palette.window.ignoresSafeArea()
             content
         }
+        .tint(Color.retypoAccent)
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(Color.retypoAccent.opacity(0.24), lineWidth: 1))
+        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(Palette.hairline, lineWidth: 1))
         .task(id: state.freeformPromptShowID) {
             // Wait for the NSPanel to actually become key + the SwiftUI host
             // to settle, then claim focus. Without the sleep, @FocusState
@@ -34,7 +32,7 @@ struct FreeformPromptWindowView: View {
         HStack(spacing: 10) {
             Image(systemName: "sparkles")
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(Color.retypoAccent.opacity(0.9))
+                .foregroundStyle(Color.retypoAccent)
             TextField("Type instruction (e.g. translate to French and shorten)", text: $state.freeformInstruction)
                 .textFieldStyle(.plain)
                 .font(.system(size: 13))

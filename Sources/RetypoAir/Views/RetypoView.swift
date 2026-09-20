@@ -2,21 +2,10 @@ import SwiftUI
 
 struct RetypoView: View {
     @EnvironmentObject var state: AppState
-    @Environment(\.colorScheme) private var colorScheme
-
-    /// Light keeps the historic glass look. Dark deepens it.
-    /// System follows the macOS appearance.
-    var isDark: Bool {
-        switch state.settings.mainTheme {
-        case .dark: true
-        case .glass: false
-        case .system: colorScheme == .dark
-        }
-    }
 
     var body: some View {
         ZStack {
-            background
+            Palette.window.ignoresSafeArea()
             VStack(spacing: 0) {
                 headerStrip
                 editorBox(minHeight: 72)
@@ -25,29 +14,16 @@ struct RetypoView: View {
                 footerStatus
             }
         }
+        .tint(Color.retypoAccent)
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .strokeBorder(Color.white.opacity(isDark ? 0.26 : 0.18), lineWidth: 1)
+                .strokeBorder(Palette.hairline, lineWidth: 1)
         )
-    }
-
-    @ViewBuilder
-    private var background: some View {
-        VisualEffectView(material: .hudWindow, blendingMode: .behindWindow)
-            .ignoresSafeArea()
-        LinearGradient(
-            colors: isDark
-                ? [Color.white.opacity(0.03), Color.black.opacity(0.38)]
-                : [Color.white.opacity(0.13), Color.black.opacity(0.07)],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-        .ignoresSafeArea()
     }
 
     var statColor: Color {
-        isDark ? Color.primary.opacity(0.85) : Color.secondary.opacity(0.98)
+        Palette.secondaryText
     }
 
     private func editorBox(minHeight: CGFloat) -> some View {
@@ -78,12 +54,11 @@ struct RetypoView: View {
 
     private var editorBackground: some View {
         RoundedRectangle(cornerRadius: 15, style: .continuous)
-            .fill(Color(nsColor: .textBackgroundColor).opacity(isDark ? 0.68 : 0.54))
-            .shadow(color: .black.opacity(0.08), radius: 20, x: 0, y: 14)
+            .fill(Palette.editor)
     }
 
     private var editorStroke: some View {
         RoundedRectangle(cornerRadius: 15, style: .continuous)
-            .strokeBorder(Color.white.opacity(isDark ? 0.16 : 0.12), lineWidth: 1)
+            .strokeBorder(Palette.hairline, lineWidth: 1)
     }
 }

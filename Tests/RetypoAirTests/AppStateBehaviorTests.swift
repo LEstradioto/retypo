@@ -1,3 +1,4 @@
+import AppKit
 import XCTest
 @testable import RetypoAir
 
@@ -9,6 +10,7 @@ final class MockPanelHost: PanelHost {
     var candidatesVisibilityHistory: [Bool] = []
     var importConfirmationHistory: [Bool] = []
     var freeformPromptHistory: [Bool] = []
+    var appearanceHistory: [NSAppearance?] = []
 
     func setAlwaysOnTop(_ enabled: Bool) { alwaysOnTop = enabled }
     func requestHide() { hideRequestCount += 1 }
@@ -16,6 +18,7 @@ final class MockPanelHost: PanelHost {
     func setCandidatesVisible(_ visible: Bool) { candidatesVisibilityHistory.append(visible) }
     func setImportConfirmationVisible(_ visible: Bool) { importConfirmationHistory.append(visible) }
     func setFreeformPromptVisible(_ visible: Bool) { freeformPromptHistory.append(visible) }
+    func setPanelAppearance(_ appearance: NSAppearance?) { appearanceHistory.append(appearance) }
 }
 
 @MainActor
@@ -141,6 +144,16 @@ final class AppStateBehaviorTests: XCTestCase {
         // candidateResults still empty, but overlay state toggled.
         XCTAssertEqual(host.candidatesVisibilityHistory, [true])
         XCTAssertTrue(state.candidateResults.isEmpty)
+    }
+
+    func testSetThemePersistsAndPushesAppearance() {
+        let (state, host) = makeState()
+        state.setTheme(.dark)
+        XCTAssertEqual(state.settings.mainTheme, .dark)
+        XCTAssertEqual(host.appearanceHistory.count, 1)
+        XCTAssertEqual(host.appearanceHistory.first??.name, NSAppearance.Name.darkAqua)
+        state.setTheme(.system)
+        XCTAssertNil(host.appearanceHistory.last ?? NSAppearance(named: .darkAqua))
     }
 
     func testHostIsWeaklyHeld() {

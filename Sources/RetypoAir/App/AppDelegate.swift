@@ -163,6 +163,10 @@ extension AppDelegate: PanelHost {
     func setFreeformPromptVisible(_ visible: Bool) {
         auxiliaryPanels?.setFreeformPromptVisible(visible)
     }
+    func setPanelAppearance(_ appearance: NSAppearance?) {
+        panel?.appearance = appearance
+        auxiliaryPanels?.setAllAppearances(appearance)
+    }
     // requestHide is provided by hidePanelAndFocusPrevious below; this satisfies the protocol.
 }
 

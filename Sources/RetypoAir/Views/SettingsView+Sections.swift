@@ -30,7 +30,7 @@ extension SettingsView {
 
     var editorSection: some View {
         SettingsCard(title: "Editor") {
-            Picker("Theme", selection: Binding(get: { state.settings.mainTheme }, set: { state.settings.mainTheme = $0; state.saveSettings() })) {
+            Picker("Theme", selection: Binding(get: { state.settings.mainTheme }, set: { state.setTheme($0) })) {
                 ForEach(MainTheme.allCases) { Text($0.displayName).tag($0) }
             }
             .settingsFocus("editor.theme", radius: 8, keyboardFocusable: true, activate: cycleTheme)
@@ -87,7 +87,7 @@ extension SettingsView {
             )
             Text("Claude/Codex import reads the terminal buffer. VS Code import briefly sends Option+F2, reads Accessible View, then presses Esc.")
                 .font(.system(size: 11, weight: .medium))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Palette.secondaryText)
         }
     }
 
@@ -112,7 +112,7 @@ extension SettingsView {
             Text("Tokens \(state.cost.lastCost.usage.totalTokens)")
         }
         .font(.system(size: 11, weight: .semibold, design: .monospaced))
-        .foregroundStyle(.secondary)
+        .foregroundStyle(Palette.secondaryText)
     }
 
     @ViewBuilder
@@ -120,7 +120,7 @@ extension SettingsView {
         let models = state.llm.modelsByProvider[state.selectedProvider] ?? []
         if models.isEmpty {
             Text("Refresh models to set per-model access, shortcuts, and pricing.")
-                .font(.system(size: 11)).foregroundStyle(.secondary)
+                .font(.system(size: 11)).foregroundStyle(Palette.secondaryText)
         } else {
             accessTableHeader
             VStack(spacing: 4) {
@@ -140,7 +140,7 @@ extension SettingsView {
             Text("Out $/M").frame(width: 76, alignment: .leading)
         }
         .font(.system(size: 10.5, weight: .semibold, design: .monospaced))
-        .foregroundStyle(.secondary)
+        .foregroundStyle(Palette.secondaryText)
     }
 
     private func accessRow(modelID: String) -> some View {

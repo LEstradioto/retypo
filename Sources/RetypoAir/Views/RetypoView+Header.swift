@@ -12,7 +12,7 @@ extension RetypoView {
                 Spacer(minLength: 6)
             }
             .font(.system(size: 10.5, weight: .medium, design: .monospaced))
-            .foregroundStyle(isDark ? Color.primary.opacity(0.78) : .secondary.opacity(0.92))
+            .foregroundStyle(Palette.secondaryText)
             .padding(.horizontal, 10)
             .padding(.top, 7)
             .padding(.bottom, 5)
@@ -28,7 +28,7 @@ extension RetypoView {
                 footerLink(state.currentAction.title, active: true, focused: state.headerModePickerVisible)
                 Text(modeShortcutLabel)
                     .font(.system(size: 10, weight: .medium, design: .monospaced))
-                    .foregroundStyle(isDark ? .secondary : .tertiary)
+                    .foregroundStyle(Palette.tertiaryText)
             }
         }
         .buttonStyle(.plain)

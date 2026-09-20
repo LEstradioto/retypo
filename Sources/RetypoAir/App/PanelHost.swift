@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 
 /// The seam between domain state (`AppState`) and the AppKit panels that
@@ -13,4 +14,5 @@ protocol PanelHost: AnyObject {
     func setCandidatesVisible(_ visible: Bool)
     func setImportConfirmationVisible(_ visible: Bool)
     func setFreeformPromptVisible(_ visible: Bool)
+    func setPanelAppearance(_ appearance: NSAppearance?)
 }

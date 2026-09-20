@@ -6,14 +6,14 @@ extension SettingsView {
             historySectionHeader
             Text("Saved: \(state.history.count)/\(state.settings.historyLimit) LLM runs · \(state.draftSnapshots.count) draft backups")
                 .font(.system(size: 11, weight: .medium, design: .monospaced))
-                .foregroundStyle(Color.retypoAccent.opacity(0.85))
+                .foregroundStyle(Color.retypoAccent)
             if state.history.isEmpty && state.draftSnapshots.isEmpty {
-                Text("No history yet.").foregroundStyle(.secondary)
+                Text("No history yet.").foregroundStyle(Palette.secondaryText)
             } else {
                 VStack(spacing: 8) {
                     ForEach(state.history) { entry in historyRow(entry) }
                     if !state.draftSnapshots.isEmpty {
-                        Divider().opacity(0.3)
+                        Divider()
                         ForEach(state.draftSnapshots.prefix(5)) { snapshot in draftRow(snapshot) }
                     }
                 }
@@ -25,7 +25,7 @@ extension SettingsView {
         HStack {
             Text("LLM runs + realtime draft backups. Showing latest entries only; full file lives at ~/.retypo-air/history.json.")
                 .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Palette.secondaryText)
             Spacer()
             Picker("Save", selection: Binding(get: { state.settings.historyLimit }, set: { state.settings.historyLimit = $0; state.saveSettings() })) {
                 Text("10").tag(10)
@@ -51,7 +51,7 @@ extension SettingsView {
                     HStack(spacing: 8) {
                         Image(systemName: expandedHistoryIDs.contains(entry.id) ? "chevron.down" : "chevron.right")
                             .font(.system(size: 10, weight: .semibold))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Palette.secondaryText)
                             .frame(width: 12)
                         historyRowContent(entry)
                     }
@@ -91,15 +91,15 @@ extension SettingsView {
         VStack(alignment: .leading, spacing: 2) {
             Text(title)
                 .font(.system(size: 10, weight: .semibold, design: .monospaced))
-                .foregroundStyle(Color.retypoAccent.opacity(0.85))
+                .foregroundStyle(Color.retypoAccent)
             Text(text.isEmpty ? "—" : text)
                 .font(.system(size: 11.5, weight: .regular, design: .monospaced))
-                .foregroundStyle(.primary.opacity(0.85))
+                .foregroundStyle(Palette.primaryText)
                 .textSelection(.enabled)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(8)
-        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Color.black.opacity(0.045)))
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Palette.card))
     }
 
     private func historyRowContent(_ entry: HistoryEntry) -> some View {
@@ -108,7 +108,7 @@ extension SettingsView {
                 if entry.actionID == EditAction.freeformID {
                     Image(systemName: "sparkles")
                         .font(.system(size: 9, weight: .semibold))
-                        .foregroundStyle(Color.retypoAccent.opacity(0.9))
+                        .foregroundStyle(Color.retypoAccent)
                 }
                 Text("\(entry.actionTitle) · \(entry.model)")
                     .font(.system(size: 12, weight: .semibold, design: .monospaced))
@@ -117,13 +117,13 @@ extension SettingsView {
             if let instruction = entry.instruction, !instruction.isEmpty {
                 Text("“\(instruction)”")
                     .font(.system(size: 11, weight: .regular, design: .monospaced))
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(Palette.tertiaryText)
                     .lineLimit(1)
                     .truncationMode(.tail)
             }
             Text(historyDisplayMode.text(for: entry))
                 .font(.system(size: 12, weight: .regular, design: historyDisplayMode == .diff ? .monospaced : .default))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Palette.secondaryText)
                 .lineLimit(2)
         }
     }
@@ -146,7 +146,7 @@ extension SettingsView {
                     .font(.system(size: 12, weight: .semibold, design: .monospaced))
                 Text(snapshot.text)
                     .font(.system(size: 12))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Palette.secondaryText)
                     .lineLimit(1)
             }
             Spacer()

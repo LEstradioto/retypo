@@ -40,6 +40,18 @@ enum MainTheme: String, CaseIterable, Identifiable, Codable {
         }
     }
 
+    /// Window appearance override. `nil` follows the macOS system setting.
+    /// Applied to the main + auxiliary panels so the theme picker works
+    /// regardless of system appearance (NSColor-based palette follows the
+    /// window's appearance automatically).
+    var nsAppearance: NSAppearance? {
+        switch self {
+        case .glass: NSAppearance(named: .aqua)
+        case .dark: NSAppearance(named: .darkAqua)
+        case .system: nil
+        }
+    }
+
     init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
         let raw = try container.decode(String.self)

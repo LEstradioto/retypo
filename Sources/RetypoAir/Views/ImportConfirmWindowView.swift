@@ -8,20 +8,18 @@ struct ImportConfirmWindowView: View {
 
     var body: some View {
         ZStack {
-            VisualEffectView(material: .hudWindow, blendingMode: .behindWindow)
-                .ignoresSafeArea()
-            LinearGradient(colors: [Color.white.opacity(0.13), Color.black.opacity(0.10)], startPoint: .topLeading, endPoint: .bottomTrailing)
-                .ignoresSafeArea()
+            Palette.window.ignoresSafeArea()
             content
         }
+        .tint(Color.retypoAccent)
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Color.white.opacity(0.16), lineWidth: 1))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Palette.hairline, lineWidth: 1))
     }
 
     private var content: some View {
         HStack(spacing: 0) {
             RoundedRectangle(cornerRadius: 2, style: .continuous)
-                .fill(Color.retypoAccent.opacity(0.9))
+                .fill(Color.retypoAccent)
                 .frame(width: 3)
                 .padding(.vertical, 10)
                 .padding(.leading, 10)
@@ -30,7 +28,7 @@ struct ImportConfirmWindowView: View {
                     .font(.system(size: 12, weight: .semibold, design: .rounded))
                 Text(summary)
                     .font(.system(size: 10, weight: .medium, design: .monospaced))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Palette.secondaryText)
                     .lineLimit(1)
                     .truncationMode(.tail)
             }

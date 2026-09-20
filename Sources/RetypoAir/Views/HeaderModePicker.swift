@@ -58,13 +58,13 @@ struct HeaderModePicker: View {
         } label: {
             Text(action.title)
                 .font(.system(size: 11, weight: selected ? .semibold : .medium, design: .rounded))
-                .foregroundStyle(selected ? Color.white : Color.primary.opacity(0.8))
+                .foregroundStyle(selected ? Color.white : Palette.primaryText)
                 .padding(.horizontal, 11)
                 .padding(.vertical, 5)
                 .background(Capsule(style: .continuous).fill(
-                    selected ? Color.retypoAccent.opacity(0.85) : Color.white.opacity(0.07)))
+                    selected ? Color.retypoAccent : Palette.card))
                 .overlay(Capsule(style: .continuous).strokeBorder(
-                    selected ? Color.clear : Color.white.opacity(0.1), lineWidth: 1))
+                    selected ? Color.clear : Palette.hairline, lineWidth: 1))
         }
         .buttonStyle(.plain)
         .pointingCursor()
@@ -95,7 +95,7 @@ struct HeaderModePicker: View {
             Spacer(minLength: 4)
             Text("←/→ choose · Enter runs · Esc closes")
                 .font(.system(size: 10, weight: .medium, design: .monospaced))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Palette.secondaryText)
                 .lineLimit(1)
         }
     }
@@ -104,16 +104,18 @@ struct HeaderModePicker: View {
         LauncherModeEditor(action: action) { editingModeID = nil }
             .environmentObject(state)
             .padding(8)
-            .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.black.opacity(0.05)))
+            .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Palette.card))
+            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Palette.hairline, lineWidth: 1))
     }
 
     private func controlButton(_ systemName: String, help: String, destructive: Bool = false, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: systemName)
                 .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(destructive ? Color.red.opacity(0.85) : Color.primary.opacity(0.8))
+                .foregroundStyle(destructive ? Color.red : Palette.primaryText)
                 .frame(width: 22, height: 20)
-                .background(Circle().fill((destructive ? Color.red : Color.retypoAccent).opacity(0.09)))
+                .background(Circle().fill(Palette.card))
+                .overlay(Circle().strokeBorder(Palette.hairline, lineWidth: 1))
         }
         .buttonStyle(.plain)
         .help(help)

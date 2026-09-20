@@ -8,14 +8,12 @@ struct CandidateOverlayWindowView: View {
 
     var body: some View {
         ZStack {
-            VisualEffectView(material: .hudWindow, blendingMode: .behindWindow)
-                .ignoresSafeArea()
-            LinearGradient(colors: [Color.white.opacity(0.12), Color.black.opacity(0.08)], startPoint: .topLeading, endPoint: .bottomTrailing)
-                .ignoresSafeArea()
+            Palette.window.ignoresSafeArea()
             content
         }
+        .tint(Color.retypoAccent)
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(Color.white.opacity(0.16), lineWidth: 1))
+        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(Palette.hairline, lineWidth: 1))
     }
 
     @ViewBuilder
@@ -33,7 +31,7 @@ struct CandidateOverlayWindowView: View {
                 .font(.system(size: 12, weight: .semibold, design: .rounded))
             Text("Tab selects + copies · Apply writes back")
                 .font(.system(size: 10.5, weight: .medium, design: .monospaced))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Palette.secondaryText)
                 .lineLimit(1)
                 .truncationMode(.tail)
             Spacer()

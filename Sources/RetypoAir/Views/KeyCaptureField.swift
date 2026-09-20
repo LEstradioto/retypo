@@ -27,16 +27,16 @@ struct KeyCaptureField: View {
                 if !text.isEmpty, !capturing {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 10, weight: .semibold))
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(Palette.tertiaryText)
                         .onTapGesture { _ = commit("") }
                 }
             }
-            .foregroundStyle(error != nil ? Color.red.opacity(0.9) : .primary.opacity(0.85))
+            .foregroundStyle(error != nil ? Color.red : Palette.primaryText)
             .padding(.horizontal, 9)
             .padding(.vertical, 5)
-            .background(Capsule(style: .continuous).fill(Color.white.opacity(capturing ? 0.14 : 0.07)))
+            .background(Capsule(style: .continuous).fill(Palette.card))
             .overlay(Capsule(style: .continuous).strokeBorder(
-                error != nil ? Color.red.opacity(0.5) : Color.white.opacity(0.12), lineWidth: 1))
+                error != nil ? Color.red : (capturing ? Color.retypoAccent : Palette.hairline), lineWidth: 1))
         }
         .buttonStyle(.plain)
         .pointingCursor()

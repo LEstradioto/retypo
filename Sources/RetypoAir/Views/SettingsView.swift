@@ -9,11 +9,7 @@ struct SettingsView: View {
     var body: some View {
         ScrollViewReader { proxy in
             ZStack {
-                VisualEffectView(material: .popover, blendingMode: .behindWindow)
-                    .ignoresSafeArea()
-                LinearGradient(colors: [Color.white.opacity(0.18), Color.retypoAccent.opacity(0.035), Color.black.opacity(0.05)], startPoint: .topLeading, endPoint: .bottomTrailing)
-                    .ignoresSafeArea()
-
+                Palette.window.ignoresSafeArea()
                 VStack(spacing: 0) {
                     settingsHeader
                     ScrollView {
@@ -28,6 +24,7 @@ struct SettingsView: View {
                     }
                 }
             }
+            .tint(Color.retypoAccent)
             .onAppear {
                 settingsFocus.setOrder(settingsFocusOrder)
                 settingsFocus.focusFirst()
@@ -107,8 +104,7 @@ struct SettingsView: View {
 
     func cycleTheme() -> Bool {
         guard let index = MainTheme.allCases.firstIndex(of: state.settings.mainTheme) else { return false }
-        state.settings.mainTheme = MainTheme.allCases[(index + 1) % MainTheme.allCases.count]
-        state.saveSettings()
+        state.setTheme(MainTheme.allCases[(index + 1) % MainTheme.allCases.count])
         return true
     }
 
@@ -127,7 +123,7 @@ struct SettingsView: View {
                     .font(.system(size: 24, weight: .semibold, design: .rounded))
                 Text("Configure provider, shortcuts, and the main panel.")
                     .font(.system(size: 12, weight: .medium, design: .monospaced))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Palette.secondaryText)
             }
             Spacer()
             Button("Done") { state.requestSettings() }

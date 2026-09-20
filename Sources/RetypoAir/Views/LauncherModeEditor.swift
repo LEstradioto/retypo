@@ -17,8 +17,8 @@ struct LauncherModeEditor: View {
                 .focused($promptIsFocused)
                 .scrollContentBackground(.hidden)
                 .padding(5)
-                .background(RoundedRectangle(cornerRadius: 9).fill(Color.black.opacity(0.08)))
-                .overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(Color.white.opacity(0.10), lineWidth: 1))
+                .background(RoundedRectangle(cornerRadius: 9).fill(Palette.editor))
+                .overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(Palette.hairline, lineWidth: 1))
             editorFooter
         }
         .onAppear {
@@ -30,7 +30,7 @@ struct LauncherModeEditor: View {
         HStack(spacing: 8) {
             Label("Auto-saved", systemImage: "checkmark.circle.fill")
                 .font(.system(size: 9.5, weight: .medium, design: .monospaced))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Palette.secondaryText)
             Spacer()
             if currentAction.hasCustomizedDefault {
                 Button("Reset default") { resetToDefault() }

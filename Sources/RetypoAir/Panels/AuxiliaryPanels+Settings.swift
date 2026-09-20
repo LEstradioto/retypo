@@ -40,6 +40,14 @@ extension AuxiliaryPanelController {
 
     func presentPanel(_ panel: NSPanel) {
         NSApp.activate(ignoringOtherApps: true)
+        panel.appearance = state?.settings.mainTheme.nsAppearance
         panel.makeKeyAndOrderFront(nil)
+    }
+
+    func setAllAppearances(_ appearance: NSAppearance?) {
+        settingsPanel?.appearance = appearance
+        candidatesPanel?.appearance = appearance
+        importPromptPanel?.appearance = appearance
+        freeformPromptPanel?.appearance = appearance
     }
 }

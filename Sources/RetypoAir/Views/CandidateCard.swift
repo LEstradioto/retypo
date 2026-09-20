@@ -14,7 +14,7 @@ struct CandidateCard: View {
                 if isFreeform {
                     Image(systemName: "sparkles")
                         .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(Color.retypoAccent.opacity(0.95))
+                        .foregroundStyle(Color.retypoAccent)
                 }
                 Text(candidate.action.title)
                     .font(.system(size: 12, weight: .semibold, design: .rounded))
@@ -23,7 +23,7 @@ struct CandidateCard: View {
                 Spacer()
                 Text(candidate.costUSD.map { String(format: "$%.4f", $0) } ?? "$—")
                     .font(.system(size: 10.5, weight: .medium, design: .monospaced))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Palette.secondaryText)
             }
             ScrollView {
                 Text(candidate.diff)
@@ -54,12 +54,12 @@ struct CandidateCard: View {
     private var cardFill: Color {
         if selected { return Color.retypoAccent.opacity(0.15) }
         if isFreeform { return Color.retypoAccent.opacity(0.10) }
-        return Color.white.opacity(0.08)
+        return Palette.card
     }
 
     private var cardStroke: Color {
-        if selected { return Color.retypoAccent.opacity(0.55) }
-        if isFreeform { return Color.retypoAccent.opacity(0.30) }
-        return Color.white.opacity(0.12)
+        if selected { return Color.retypoAccent }
+        if isFreeform { return Color.retypoAccent.opacity(0.4) }
+        return Palette.hairline
     }
 }

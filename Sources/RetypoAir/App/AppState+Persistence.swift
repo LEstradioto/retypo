@@ -10,6 +10,14 @@ extension AppState {
         EditActionStore.save(actions)
     }
 
+    /// Theme changes apply live: persist + push the window appearance to
+    /// every panel (the NSColor palette follows the window automatically).
+    func setTheme(_ theme: MainTheme) {
+        settings.mainTheme = theme
+        saveSettings()
+        host?.setPanelAppearance(theme.nsAppearance)
+    }
+
     // Pricing forwarding (CostTracker owns the data; views observe AppState).
     func mergePricingDefaults(for provider: ProviderKind, models: [ProviderModel]) {
         cost.mergePricingDefaults(for: provider, models: models)
