@@ -34,8 +34,38 @@ extension SettingsView {
                 ForEach(MainTheme.allCases) { Text($0.displayName).tag($0) }
             }
             .settingsFocus("editor.theme", radius: 8, keyboardFocusable: true, activate: cycleTheme)
+            HStack(spacing: 8) {
+                Text("Opacity")
+                    .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                    .foregroundStyle(Palette.secondaryText)
+                Slider(value: opacityBinding, in: 0.5...1.0, step: 0.05)
+                    .settingsFocus("editor.opacity", radius: 8)
+                Text("\(Int(state.settings.windowOpacity * 100))%")
+                    .font(.system(size: 11, weight: .medium, design: .monospaced))
+                    .foregroundStyle(Palette.secondaryText)
+                    .frame(width: 40, alignment: .trailing)
+            }
+            HStack(spacing: 8) {
+                ColorPicker("Font color", selection: fontColorBinding)
+                    .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                    .settingsFocus("editor.fontColor", radius: 8)
+                Button("Auto") { state.setFontColorHex(nil) }
+                    .buttonStyle(SettingsCapsuleButtonStyle(active: state.settings.fontColorHex == nil))
+                    .help("Follow the system text color")
+            }
             editorToggleGrid
         }
+    }
+
+    private var opacityBinding: Binding<Double> {
+        Binding(get: { state.settings.windowOpacity }, set: { state.setWindowOpacity($0) })
+    }
+
+    private var fontColorBinding: Binding<Color> {
+        Binding(
+            get: { Color(nsColor: state.editorFontColor) },
+            set: { if let hex = FontColorHex.hex(from: $0) { state.setFontColorHex(hex) } }
+        )
     }
 
     private var editorToggleGrid: some View {

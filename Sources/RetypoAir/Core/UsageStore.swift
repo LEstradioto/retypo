@@ -109,9 +109,3 @@ struct CandidateResult: Identifiable, Hashable {
     var usage: TokenUsage
     var costUSD: Double?
 }
-
-struct PendingImport: Identifiable, Hashable {
-    var id: UUID = UUID()
-    var text: String
-    var source: String
-}

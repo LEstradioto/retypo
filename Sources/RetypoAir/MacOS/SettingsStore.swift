@@ -28,6 +28,9 @@ enum MainTheme: String, CaseIterable, Identifiable, Codable {
     case glass
     case dark
     case system
+    case monokai
+    case tokyoNight
+    case catppuccin
 
     var id: String { rawValue }
     /// `glass` is the historic default look and stays as the Light theme.
@@ -37,6 +40,20 @@ enum MainTheme: String, CaseIterable, Identifiable, Codable {
         case .glass: "Light"
         case .dark: "Dark"
         case .system: "System"
+        case .monokai: "Monokai"
+        case .tokyoNight: "Tokyo Night"
+        case .catppuccin: "Catppuccin"
+        }
+    }
+
+    /// Explicit palette for the curated presets; `nil` follows the system
+    /// NSColors (Light / Dark / System).
+    var definition: ThemeDefinition? {
+        switch self {
+        case .monokai: .monokai
+        case .tokyoNight: .tokyoNight
+        case .catppuccin: .catppuccin
+        case .glass, .dark, .system: nil
         }
     }
 
@@ -47,20 +64,18 @@ enum MainTheme: String, CaseIterable, Identifiable, Codable {
     var nsAppearance: NSAppearance? {
         switch self {
         case .glass: NSAppearance(named: .aqua)
-        case .dark: NSAppearance(named: .darkAqua)
         case .system: nil
+        case .dark, .monokai, .tokyoNight, .catppuccin: NSAppearance(named: .darkAqua)
         }
     }
+
+    /// Renamed raw values keep decoding to their successor.
+    private static let renamedThemes: [String: MainTheme] = ["lighter": .glass]
 
     init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
         let raw = try container.decode(String.self)
-        self = switch raw {
-        case "glass", "lighter": .glass
-        case "dark": .dark
-        case "system": .system
-        default: .glass
-        }
+        self = Self(rawValue: raw) ?? Self.renamedThemes[raw] ?? .glass
     }
 }
 
@@ -97,6 +112,8 @@ struct RetypoSettings: Codable, Equatable {
     var experimentalVSCodeAccessibleViewImport: Bool = true
     var smartPasteEnabled: Bool = true
     var smartPasteShortcut: String = "cmd+shift+v"
+    var windowOpacity: Double = 1.0
+    var fontColorHex: String? = nil
 
     init() {}
 
@@ -110,20 +127,35 @@ struct RetypoSettings: Codable, Equatable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case provider, modelByProvider, autoCopy, alwaysOnTop, nativeSpellcheck, panelFrame, currentActionID, mainTheme, shortcutByAction, shortcutByModel, acceptedModelIDsByProvider, nextModelShortcut, previousModelShortcut, followActiveScreenOnShow, historyLimit, terminalPromptImportEnabled, experimentalVSCodeAccessibleViewImport, smartPasteEnabled, smartPasteShortcut
+        case provider, modelByProvider, autoCopy, alwaysOnTop, nativeSpellcheck, panelFrame, currentActionID, mainTheme, shortcutByAction, shortcutByModel, acceptedModelIDsByProvider, nextModelShortcut, previousModelShortcut, followActiveScreenOnShow, historyLimit, terminalPromptImportEnabled, experimentalVSCodeAccessibleViewImport, smartPasteEnabled, smartPasteShortcut, windowOpacity, fontColorHex
     }
 
     init(from decoder: Decoder) throws {
         self.init()
         let container = try decoder.container(keyedBy: CodingKeys.self)
+        try decodeDisplay(from: container)
+        try decodeAppearance(from: container)
+        try decodeShortcuts(from: container)
+        try decodeImports(from: container)
+    }
+
+    private mutating func decodeDisplay(from container: KeyedDecodingContainer<CodingKeys>) throws {
         provider = try container.decodeIfPresent(ProviderKind.self, forKey: .provider) ?? provider
         modelByProvider = try container.decodeIfPresent([ProviderKind: String].self, forKey: .modelByProvider) ?? modelByProvider
         autoCopy = try container.decodeIfPresent(Bool.self, forKey: .autoCopy) ?? autoCopy
         alwaysOnTop = try container.decodeIfPresent(Bool.self, forKey: .alwaysOnTop) ?? alwaysOnTop
         nativeSpellcheck = try container.decodeIfPresent(Bool.self, forKey: .nativeSpellcheck) ?? nativeSpellcheck
         panelFrame = try container.decodeIfPresent(PanelFrame.self, forKey: .panelFrame) ?? panelFrame
+    }
+
+    private mutating func decodeAppearance(from container: KeyedDecodingContainer<CodingKeys>) throws {
         currentActionID = try container.decodeIfPresent(String.self, forKey: .currentActionID) ?? currentActionID
         mainTheme = try container.decodeIfPresent(MainTheme.self, forKey: .mainTheme) ?? mainTheme
+        windowOpacity = try container.decodeIfPresent(Double.self, forKey: .windowOpacity) ?? windowOpacity
+        fontColorHex = try container.decodeIfPresent(String.self, forKey: .fontColorHex) ?? fontColorHex
+    }
+
+    private mutating func decodeShortcuts(from container: KeyedDecodingContainer<CodingKeys>) throws {
         if let shortcuts = try container.decodeIfPresent([String: String].self, forKey: .shortcutByAction) {
             shortcutByAction.merge(shortcuts) { _, new in new }
         }
@@ -131,6 +163,9 @@ struct RetypoSettings: Codable, Equatable {
         acceptedModelIDsByProvider = try container.decodeIfPresent([ProviderKind: [String]].self, forKey: .acceptedModelIDsByProvider) ?? acceptedModelIDsByProvider
         nextModelShortcut = try container.decodeIfPresent(String.self, forKey: .nextModelShortcut) ?? nextModelShortcut
         previousModelShortcut = try container.decodeIfPresent(String.self, forKey: .previousModelShortcut) ?? previousModelShortcut
+    }
+
+    private mutating func decodeImports(from container: KeyedDecodingContainer<CodingKeys>) throws {
         followActiveScreenOnShow = try container.decodeIfPresent(Bool.self, forKey: .followActiveScreenOnShow) ?? followActiveScreenOnShow
         historyLimit = try container.decodeIfPresent(Int.self, forKey: .historyLimit) ?? historyLimit
         terminalPromptImportEnabled = try container.decodeIfPresent(Bool.self, forKey: .terminalPromptImportEnabled) ?? terminalPromptImportEnabled

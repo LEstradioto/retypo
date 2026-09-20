@@ -2,17 +2,16 @@ import AppKit
 import Foundation
 
 extension AppState {
-    @discardableResult
-    func receiveExternalImport(_ text: String, source: String) -> Bool {
+    /// External text (global hotkey import, terminal prompt, smart paste)
+    /// goes straight into the editor — no confirmation modal. Undo (Cmd+Z)
+    /// restores whatever was there before.
+    func receiveExternalImport(_ text: String, source: String) {
         let trimmedIncoming = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedIncoming.isEmpty, !text.hasPrefix("__RETYP_AIR_IMPORT_EMPTY_") else {
             status = "No selected text imported"
-            return false
+            return
         }
-
-        pendingImport = PendingImport(text: text, source: source)
-        status = "Confirm import from \(source)"
-        return true
+        importExternalText(text, source: source)
     }
 
     /// Smart paste: pull the system clipboard straight into the editor.
@@ -31,21 +30,6 @@ extension AppState {
             return
         }
         importExternalText(text, source: "Clipboard")
-    }
-
-    func confirmPendingImport() {
-        guard let pendingImport else { return }
-        let text = pendingImport.text
-        let source = pendingImport.source
-        self.pendingImport = nil
-        host?.setImportConfirmationVisible(false)
-        importExternalText(text, source: source)
-    }
-
-    func cancelPendingImport() {
-        pendingImport = nil
-        host?.setImportConfirmationVisible(false)
-        status = "Import cancelled"
     }
 
     func importExternalText(_ text: String, source: String) {

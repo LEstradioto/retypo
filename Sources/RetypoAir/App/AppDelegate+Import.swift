@@ -68,9 +68,8 @@ extension AppDelegate {
         guard let selectedText = selectedTextViaAccessibility(from: application),
               !selectedText.trimmingCharacters(in: .newlines).isEmpty else { return false }
         DebugLog.log("import success via AXSelectedText length=\(selectedText.count)")
-        let needsConfirmation = state?.receiveExternalImport(selectedText, source: sourceName) ?? false
+        state?.receiveExternalImport(selectedText, source: sourceName)
         showPanel()
-        if needsConfirmation { auxiliaryPanels?.setImportPromptVisible(true) }
         return true
     }
 

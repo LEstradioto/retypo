@@ -3,18 +3,31 @@ import SwiftUI
 extension SettingsView {
     var historySection: some View {
         SettingsCard(title: "History") {
-            historySectionHeader
-            Text("Saved: \(state.history.count)/\(state.settings.historyLimit) LLM runs · \(state.draftSnapshots.count) draft backups")
-                .font(.system(size: 11, weight: .medium, design: .monospaced))
-                .foregroundStyle(Color.retypoAccent)
-            if state.history.isEmpty && state.draftSnapshots.isEmpty {
-                Text("No history yet.").foregroundStyle(Palette.secondaryText)
-            } else {
-                VStack(spacing: 8) {
-                    ForEach(state.history) { entry in historyRow(entry) }
-                    if !state.draftSnapshots.isEmpty {
-                        Divider()
-                        ForEach(state.draftSnapshots.prefix(5)) { snapshot in draftRow(snapshot) }
+            Button { historyExpanded.toggle() } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: historyExpanded ? "chevron.down" : "chevron.right")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(Palette.secondaryText)
+                        .frame(width: 14)
+                    Text("Saved: \(state.history.count)/\(state.settings.historyLimit) LLM runs · \(state.draftSnapshots.count) draft backups")
+                        .font(.system(size: 11, weight: .medium, design: .monospaced))
+                        .foregroundStyle(Color.retypoAccent)
+                    Spacer()
+                }
+            }
+            .buttonStyle(.plain)
+            .pointingCursor()
+            if historyExpanded {
+                historySectionHeader
+                if state.history.isEmpty && state.draftSnapshots.isEmpty {
+                    Text("No history yet.").foregroundStyle(Palette.secondaryText)
+                } else {
+                    VStack(spacing: 8) {
+                        ForEach(state.history) { entry in historyRow(entry) }
+                        if !state.draftSnapshots.isEmpty {
+                            Divider()
+                            ForEach(state.draftSnapshots.prefix(5)) { snapshot in draftRow(snapshot) }
+                        }
                     }
                 }
             }
@@ -45,61 +58,11 @@ extension SettingsView {
     }
 
     private func historyRow(_ entry: HistoryEntry) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: 10) {
-                Button { toggleHistoryExpanded(entry.id) } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: expandedHistoryIDs.contains(entry.id) ? "chevron.down" : "chevron.right")
-                            .font(.system(size: 10, weight: .semibold))
-                            .foregroundStyle(Palette.secondaryText)
-                            .frame(width: 12)
-                        historyRowContent(entry)
-                    }
-                }
-                .buttonStyle(.plain)
-                .pointingCursor()
-                Spacer()
-                historyRowRestoreButton(entry)
-            }
-            if expandedHistoryIDs.contains(entry.id) {
-                historyExpandedMessages(entry)
-            }
+        HStack(spacing: 10) {
+            historyRowContent(entry)
+            Spacer()
+            historyRowRestoreButton(entry)
         }
-    }
-
-    private func toggleHistoryExpanded(_ id: UUID) {
-        if expandedHistoryIDs.contains(id) {
-            expandedHistoryIDs.remove(id)
-        } else {
-            expandedHistoryIDs.insert(id)
-        }
-    }
-
-    private func historyExpandedMessages(_ entry: HistoryEntry) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            historyMessageBlock(title: "Input", text: entry.input)
-            historyMessageBlock(title: "Output", text: entry.output)
-            if !entry.diff.isEmpty {
-                historyMessageBlock(title: "Diff", text: entry.diff)
-            }
-        }
-        .padding(.leading, 16)
-        .padding(.top, 4)
-    }
-
-    private func historyMessageBlock(title: String, text: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(title)
-                .font(.system(size: 10, weight: .semibold, design: .monospaced))
-                .foregroundStyle(Color.retypoAccent)
-            Text(text.isEmpty ? "—" : text)
-                .font(.system(size: 11.5, weight: .regular, design: .monospaced))
-                .foregroundStyle(Palette.primaryText)
-                .textSelection(.enabled)
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .padding(8)
-        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Palette.card))
     }
 
     private func historyRowContent(_ entry: HistoryEntry) -> some View {

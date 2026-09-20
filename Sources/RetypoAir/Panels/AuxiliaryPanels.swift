@@ -8,7 +8,6 @@ final class AuxiliaryPanelController {
     let settingsFocus = SettingsFocusCoordinator()
     var settingsPanel: NSPanel?
     var candidatesPanel: NSPanel?
-    var importPromptPanel: NSPanel?
     var freeformPromptPanel: NSPanel?
 
     init(mainPanel: NSWindow, state: AppState) {
@@ -20,9 +19,6 @@ final class AuxiliaryPanelController {
         if candidatesPanel?.isVisible == true, let candidatesPanel {
             positionCandidates(candidatesPanel)
         }
-        if importPromptPanel?.isVisible == true, let importPromptPanel {
-            positionImportPrompt(importPromptPanel)
-        }
     }
 
     /// Order out every auxiliary panel without focusing the main editor.
@@ -32,7 +28,6 @@ final class AuxiliaryPanelController {
         state?.showSettings = false
         candidatesPanel?.orderOut(nil)
         state?.showCandidateOverlay = false
-        importPromptPanel?.orderOut(nil)
         freeformPromptPanel?.orderOut(nil)
     }
 

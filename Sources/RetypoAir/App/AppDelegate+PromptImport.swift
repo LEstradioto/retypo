@@ -13,9 +13,8 @@ extension AppDelegate {
     private func importTerminalPrompt(_ prompt: PromptCaptureCandidate, sourceName: String) -> Bool {
         DebugLog.log("import success via \(prompt.kind) length=\(prompt.text.count)")
         let source = prompt.kind.sourceName(applicationName: sourceName)
-        let needsConfirmation = state?.receiveExternalImport(prompt.text, source: source) ?? false
+        state?.receiveExternalImport(prompt.text, source: source)
         showPanel()
-        if needsConfirmation { auxiliaryPanels?.setImportPromptVisible(true) }
         return true
     }
 }

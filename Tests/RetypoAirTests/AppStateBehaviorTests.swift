@@ -8,17 +8,17 @@ final class MockPanelHost: PanelHost {
     var settingsRequestCount = 0
     var alwaysOnTop: Bool?
     var candidatesVisibilityHistory: [Bool] = []
-    var importConfirmationHistory: [Bool] = []
     var freeformPromptHistory: [Bool] = []
     var appearanceHistory: [NSAppearance?] = []
+    var windowOpacityHistory: [Double] = []
 
     func setAlwaysOnTop(_ enabled: Bool) { alwaysOnTop = enabled }
     func requestHide() { hideRequestCount += 1 }
     func requestSettings() { settingsRequestCount += 1 }
     func setCandidatesVisible(_ visible: Bool) { candidatesVisibilityHistory.append(visible) }
-    func setImportConfirmationVisible(_ visible: Bool) { importConfirmationHistory.append(visible) }
     func setFreeformPromptVisible(_ visible: Bool) { freeformPromptHistory.append(visible) }
     func setPanelAppearance(_ appearance: NSAppearance?) { appearanceHistory.append(appearance) }
+    func setWindowOpacity(_ opacity: Double) { windowOpacityHistory.append(opacity) }
 }
 
 @MainActor
@@ -57,32 +57,6 @@ final class AppStateBehaviorTests: XCTestCase {
         XCTAssertEqual(host.candidatesVisibilityHistory, [true, false])
     }
 
-    func testCancelPendingImportNotifiesHost() {
-        let (state, host) = makeState()
-        state.pendingImport = PendingImport(text: "x", source: "Test")
-        state.cancelPendingImport()
-        XCTAssertNil(state.pendingImport)
-        XCTAssertEqual(host.importConfirmationHistory, [false])
-    }
-
-    func testConfirmPendingImportWithoutPendingIsNoop() {
-        let (state, host) = makeState()
-        state.confirmPendingImport()
-        XCTAssertEqual(host.importConfirmationHistory, [])
-    }
-
-    func testConfirmPendingImportPersistsWithoutTouchingLiveDraft() {
-        let draftPersistence = RecordingDraftPersistence()
-        let (state, host) = makeState(draftPersistence: draftPersistence)
-        state.pendingImport = PendingImport(text: "Paste me", source: "Clipboard")
-
-        state.confirmPendingImport()
-
-        XCTAssertEqual(state.inputText, "Paste me")
-        XCTAssertEqual(draftPersistence.savedTexts, ["Paste me"])
-        XCTAssertEqual(host.importConfirmationHistory, [false])
-    }
-
     func testStateLoadsDraftFromInjectedPersistence() {
         let draftPersistence = RecordingDraftPersistence(storedText: "Recovered")
 
@@ -103,22 +77,23 @@ final class AppStateBehaviorTests: XCTestCase {
         XCTAssertEqual(state.status, "Draft restored")
     }
 
-    func testExternalImportAlwaysWaitsForConfirmation() {
+    func testExternalImportGoesStraightToEditor() {
         let (state, _) = makeState()
         state.inputText = ""
 
-        XCTAssertTrue(state.receiveExternalImport("Clipboard text", source: "Safari"))
-        XCTAssertEqual(state.pendingImport?.text, "Clipboard text")
-        XCTAssertEqual(state.pendingImport?.source, "Safari")
-        XCTAssertEqual(state.inputText, "")
+        state.receiveExternalImport("Clipboard text", source: "Safari")
+
+        XCTAssertEqual(state.inputText, "Clipboard text")
+        XCTAssertEqual(state.status, "Imported text from Safari")
     }
 
-    func testMatchingExternalImportStillWaitsForConfirmation() {
+    func testMatchingExternalImportReplacesEditor() {
         let (state, _) = makeState()
         state.inputText = "Same text"
 
-        XCTAssertTrue(state.receiveExternalImport("Same text", source: "TextEdit"))
-        XCTAssertEqual(state.pendingImport?.text, "Same text")
+        state.receiveExternalImport("Same text", source: "TextEdit")
+
+        XCTAssertEqual(state.inputText, "Same text")
     }
 
     /// Regression for the ESC-in-candidates fix: clearCandidateResults wipes

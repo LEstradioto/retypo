@@ -12,7 +12,7 @@ protocol PanelHost: AnyObject {
     func requestHide()
     func requestSettings()
     func setCandidatesVisible(_ visible: Bool)
-    func setImportConfirmationVisible(_ visible: Bool)
     func setFreeformPromptVisible(_ visible: Bool)
     func setPanelAppearance(_ appearance: NSAppearance?)
+    func setWindowOpacity(_ opacity: Double)
 }

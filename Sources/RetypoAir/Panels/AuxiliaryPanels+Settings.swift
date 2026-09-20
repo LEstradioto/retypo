@@ -47,7 +47,6 @@ extension AuxiliaryPanelController {
     func setAllAppearances(_ appearance: NSAppearance?) {
         settingsPanel?.appearance = appearance
         candidatesPanel?.appearance = appearance
-        importPromptPanel?.appearance = appearance
         freeformPromptPanel?.appearance = appearance
     }
 }

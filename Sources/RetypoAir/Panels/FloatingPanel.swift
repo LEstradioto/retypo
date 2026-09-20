@@ -11,6 +11,7 @@ final class FloatingPanel: NSPanel {
         configureBaseAppearance()
         level = settings.alwaysOnTop ? .floating : .normal
         appearance = settings.mainTheme.nsAppearance
+        alphaValue = CGFloat(settings.windowOpacity)
         hideStandardWindowButtons()
     }
 

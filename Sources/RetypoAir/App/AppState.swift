@@ -30,7 +30,6 @@ final class AppState: ObservableObject {
     @Published var wordsPerMinute: Double = 0
     @Published var wordsChangedLast = 0
     @Published var footerFocusIndex: Int? = nil
-    @Published var pendingImport: PendingImport?
     @Published var canUndoEditorChange = false
     @Published var canRedoEditorChange = false
     /// Live instruction text for the Freeform mode. Populated only while
@@ -80,6 +79,7 @@ final class AppState: ObservableObject {
         self.draftSnapshots = DraftSnapshotStore.load()
         self.inputText = draftPersistence.load()
         if pricingChanged { PricingStore.save(loadedPricing) }
+        Palette.current = settings.mainTheme
         rebroadcastCostChanges()
     }
 
@@ -138,7 +138,8 @@ final class AppState: ObservableObject {
     func setSelectedModel(_ model: String, provider: ProviderKind? = nil) {
         if let provider { settings.provider = provider }
         settings.modelByProvider[settings.provider] = model
-        status = "Model: \(model)"
+        // No status echo: the footer model menu already shows the pick.
+        // Echoing the id here printed the model name twice in the footer.
         saveSettings()
     }
 

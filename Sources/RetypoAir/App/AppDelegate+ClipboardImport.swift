@@ -28,9 +28,8 @@ extension AppDelegate {
             return false
         }
         DebugLog.log("import fallback: using existing clipboard length=\(text.count)")
-        let needsConfirmation = state?.receiveExternalImport(text, source: "\(sourceName) (clipboard)") ?? false
+        state?.receiveExternalImport(text, source: "\(sourceName) (clipboard)")
         showPanel()
-        if needsConfirmation { auxiliaryPanels?.setImportPromptVisible(true) }
         return true
     }
 
@@ -84,9 +83,8 @@ extension AppDelegate {
         let text = imported.trimmingCharacters(in: .newlines)
         guard changed, !text.isEmpty, !imported.hasPrefix("__RETYP_AIR_IMPORT_EMPTY_") else { return false }
         DebugLog.log("import success via clipboard length=\(imported.count)")
-        let needsConfirmation = state?.receiveExternalImport(imported, source: source.name) ?? false
+        state?.receiveExternalImport(imported, source: source.name)
         showPanel()
-        if needsConfirmation { auxiliaryPanels?.setImportPromptVisible(true) }
         return true
     }
 
@@ -108,9 +106,8 @@ extension AppDelegate {
               !original.isEmpty else { return false }
         DebugLog.log("import fallback: using original clipboard length=\(original.count)")
         let source = "\(ctx.source.name) (clipboard)"
-        let needsConfirmation = state?.receiveExternalImport(original, source: source) ?? false
+        state?.receiveExternalImport(original, source: source)
         showPanel()
-        if needsConfirmation { auxiliaryPanels?.setImportPromptVisible(true) }
         return true
     }
 

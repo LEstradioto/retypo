@@ -4,7 +4,7 @@ struct SettingsView: View {
     @EnvironmentObject var state: AppState
     @EnvironmentObject var settingsFocus: SettingsFocusCoordinator
     @State var historyDisplayMode: HistoryDisplayMode = .input
-    @State var expandedHistoryIDs: Set<UUID> = []
+    @State var historyExpanded = false
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -48,6 +48,8 @@ struct SettingsView: View {
             "model.model",
             "model.refresh",
             "editor.theme",
+            "editor.opacity",
+            "editor.fontColor",
             "editor.autoCopy",
             "editor.alwaysOnTop",
             "editor.followScreen",

@@ -3,23 +3,26 @@ import AppKit
 
 extension Color {
     /// House accent for custom chrome (links, pills, focus, alerts).
-    /// Orange holds contrast on gray in both Light and Dark, where the
-    /// system blue washed out. System controls (Toggle, Picker) follow
-    /// the root `.tint` instead.
-    static var retypoAccent: Color { .orange }
+    /// Preset themes bring their own accent; otherwise orange, which holds
+    /// contrast on gray in both Light and Dark where blue washed out.
+    /// System controls (Toggle, Picker) follow the root `.tint` instead.
+    static var retypoAccent: Color { Palette.current.definition?.accent ?? .orange }
 }
 
-/// Solid adaptive surfaces. Everything here resolves through NSColor, so
-/// Light/Dark follow the theme with no translucency and no opacity hacks —
-/// ghost panels were unreadable over arbitrary desktop content.
+/// Solid adaptive surfaces. Preset themes resolve to explicit colors;
+/// Light / Dark / System resolve through NSColor — no translucency, no
+/// opacity hacks. `current` is set from settings at launch and on every
+/// theme change (single main window, always on MainActor).
 enum Palette {
-    static var window: Color { Color(nsColor: .windowBackgroundColor) }
-    static var editor: Color { Color(nsColor: .textBackgroundColor) }
-    static var card: Color { Color(nsColor: .controlBackgroundColor) }
-    static var hairline: Color { Color(nsColor: .separatorColor) }
-    static var primaryText: Color { Color(nsColor: .labelColor) }
-    static var secondaryText: Color { Color(nsColor: .secondaryLabelColor) }
-    static var tertiaryText: Color { Color(nsColor: .tertiaryLabelColor) }
+    static var current: MainTheme = .glass
+
+    static var window: Color { current.definition?.window ?? Color(nsColor: .windowBackgroundColor) }
+    static var editor: Color { current.definition?.editor ?? Color(nsColor: .textBackgroundColor) }
+    static var card: Color { current.definition?.card ?? Color(nsColor: .controlBackgroundColor) }
+    static var hairline: Color { current.definition?.hairline ?? Color(nsColor: .separatorColor) }
+    static var primaryText: Color { current.definition?.primaryText ?? Color(nsColor: .labelColor) }
+    static var secondaryText: Color { current.definition?.secondaryText ?? Color(nsColor: .secondaryLabelColor) }
+    static var tertiaryText: Color { current.definition?.tertiaryText ?? Color(nsColor: .tertiaryLabelColor) }
 }
 
 struct PointingCursorModifier: ViewModifier {

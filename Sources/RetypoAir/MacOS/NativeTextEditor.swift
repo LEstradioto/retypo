@@ -5,6 +5,7 @@ struct NativeTextEditor: NSViewRepresentable {
     @Binding var text: String
     var nativeSpellcheck: Bool
     var highlightRanges: [NSRange] = []
+    var fontColor: NSColor? = nil
     var onSubmit: () -> Void
     var onRunAll: () -> Void = {}
     var onChange: () -> Void
@@ -75,8 +76,8 @@ struct NativeTextEditor: NSViewRepresentable {
         textView.isGrammarCheckingEnabled = nativeSpellcheck
         textView.isAutomaticSpellingCorrectionEnabled = nativeSpellcheck
         textView.font = NSFont.monospacedSystemFont(ofSize: 15, weight: .regular)
-        textView.textColor = NSColor.labelColor
-        textView.insertionPointColor = NSColor.labelColor
+        textView.textColor = fontColor ?? NSColor.labelColor
+        textView.insertionPointColor = fontColor ?? NSColor.labelColor
         textView.backgroundColor = .clear
         textView.drawsBackground = false
         textView.textContainerInset = NSSize(width: 16, height: 16)

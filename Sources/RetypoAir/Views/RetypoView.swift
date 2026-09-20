@@ -32,6 +32,7 @@ struct RetypoView: View {
                 text: $state.inputText,
                 nativeSpellcheck: state.settings.nativeSpellcheck,
                 highlightRanges: state.inlineHighlightRanges,
+                fontColor: state.editorFontColor,
                 onSubmit: { Task { await state.runCurrentAction(source: "enter") } },
                 onRunAll: { Task { await state.runAllEnabledModes() } },
                 onChange: { state.onInputChanged() },

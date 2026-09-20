@@ -14,8 +14,26 @@ extension AppState {
     /// every panel (the NSColor palette follows the window automatically).
     func setTheme(_ theme: MainTheme) {
         settings.mainTheme = theme
+        Palette.current = theme
         saveSettings()
         host?.setPanelAppearance(theme.nsAppearance)
+    }
+
+    /// Editor font color. `nil` hex follows the system label color.
+    var editorFontColor: NSColor {
+        FontColorHex.color(from: settings.fontColorHex) ?? .labelColor
+    }
+
+    func setFontColorHex(_ hex: String?) {
+        settings.fontColorHex = hex
+        saveSettings()
+    }
+
+    /// Main-panel translucency slider. Persists + applies live.
+    func setWindowOpacity(_ opacity: Double) {
+        settings.windowOpacity = min(1, max(0.5, opacity))
+        saveSettings()
+        host?.setWindowOpacity(settings.windowOpacity)
     }
 
     // Pricing forwarding (CostTracker owns the data; views observe AppState).
