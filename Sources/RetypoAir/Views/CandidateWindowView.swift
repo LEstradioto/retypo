@@ -1,8 +1,9 @@
 import SwiftUI
 
+/// Candidate results overlay. Mode picking moved to the header picker
+/// (Cmd+D); this panel only shows multi-run results for apply/copy.
 struct CandidateOverlayWindowView: View {
     @EnvironmentObject private var state: AppState
-    @State private var editingModeID: String?
     private let cardSpacing: CGFloat = 10
 
     var body: some View {
@@ -15,29 +16,22 @@ struct CandidateOverlayWindowView: View {
         }
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(Color.white.opacity(0.16), lineWidth: 1))
-        .onChange(of: state.showCandidateOverlay) { visible in
-            if !visible { editingModeID = nil }
-        }
     }
 
     @ViewBuilder
     private var content: some View {
         VStack(spacing: 8) {
             header
-            if state.candidateResults.isEmpty {
-                launcher
-            } else {
-                candidates
-            }
+            candidates
         }
         .padding(12)
     }
 
     private var header: some View {
         HStack(spacing: 8) {
-            Text(state.candidateResults.isEmpty ? "Run mode" : "Candidates")
+            Text("Candidates")
                 .font(.system(size: 12, weight: .semibold, design: .rounded))
-            Text(headerHint)
+            Text("Tab selects + copies · Apply writes back")
                 .font(.system(size: 10.5, weight: .medium, design: .monospaced))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
@@ -50,66 +44,6 @@ struct CandidateOverlayWindowView: View {
             .buttonStyle(.plain)
             .pointingCursor()
         }
-    }
-
-    private var launcher: some View {
-        GeometryReader { proxy in
-            let width = responsiveCardWidth(
-                available: proxy.size.width,
-                count: state.enabledActions.count,
-                preferred: 220,
-                minimum: 160
-            )
-            ScrollViewReader { scrollProxy in
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(alignment: .top, spacing: cardSpacing) {
-                        ForEach(Array(state.enabledActions.enumerated()), id: \.element.id) { index, action in
-                            LauncherModeCard(
-                                action: action,
-                                width: width,
-                                selected: index == state.selectedLauncherModeIndex,
-                                editing: editingModeID == action.id,
-                                select: {
-                                    state.selectedLauncherModeIndex = index
-                                    state.setCurrentAction(action.id)
-                                },
-                                edit: {
-                                    state.selectedLauncherModeIndex = index
-                                    state.setCurrentAction(action.id)
-                                    editingModeID = action.id
-                                },
-                                finishEditing: { editingModeID = nil },
-                                run: {
-                                    Task {
-                                        state.selectedLauncherModeIndex = index
-                                        await state.runSelectedLauncherMode()
-                                    }
-                                }
-                            )
-                            .environmentObject(state)
-                            .id(action.id)
-                        }
-                        Spacer(minLength: 0)
-                    }
-                    .frame(minWidth: proxy.size.width, alignment: .leading)
-                    .padding(.bottom, 2)
-                }
-                .onAppear { scrollToSelectedLauncher(using: scrollProxy) }
-                .onChange(of: state.selectedLauncherModeIndex) { _ in
-                    scrollToSelectedLauncher(using: scrollProxy)
-                }
-                .onChange(of: state.enabledActions.count) { _ in
-                    scrollToSelectedLauncher(using: scrollProxy)
-                }
-            }
-        }
-        .frame(height: 180)
-    }
-
-    private var headerHint: String {
-        if !state.candidateResults.isEmpty { return "Tab selects + copies · Apply writes back" }
-        if editingModeID != nil { return "Changes save automatically · Esc closes" }
-        return "Tab chooses mode · Enter runs · pencil edits"
     }
 
     private var candidates: some View {
@@ -164,12 +98,6 @@ struct CandidateOverlayWindowView: View {
         let calculated = usable / CGFloat(max(1, visibleColumns))
         let clamped = min(preferred, max(minimum, calculated))
         return min(clamped, available)
-    }
-
-    private func scrollToSelectedLauncher(using proxy: ScrollViewProxy) {
-        guard state.enabledActions.indices.contains(state.selectedLauncherModeIndex) else { return }
-        let id = state.enabledActions[state.selectedLauncherModeIndex].id
-        scrollTo(id, using: proxy)
     }
 
     private func scrollToSelectedCandidate(using proxy: ScrollViewProxy) {

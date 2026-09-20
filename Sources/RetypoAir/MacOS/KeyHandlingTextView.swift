@@ -63,6 +63,9 @@ final class KeyHandlingTextView: NSTextView {
         guard event.modifierFlags.contains(.command) else { return false }
         switch Int(event.keyCode) {
         case 8: copy(nil); return true
+        // Cmd+Shift+V is smart-paste, not paste: let it fall through to
+        // the shortcut handler instead of inserting clipboard text here.
+        case 9 where event.modifierFlags.contains(.shift): return false
         case 9: paste(nil); return true
         case 7: cut(nil); return true
         case 6: performUndoRedo(redo: event.modifierFlags.contains(.shift)); return true

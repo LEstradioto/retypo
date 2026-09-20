@@ -83,6 +83,8 @@ struct RetypoSettings: Codable, Equatable {
     var historyLimit: Int = 10
     var terminalPromptImportEnabled: Bool = true
     var experimentalVSCodeAccessibleViewImport: Bool = true
+    var smartPasteEnabled: Bool = true
+    var smartPasteShortcut: String = "cmd+shift+v"
 
     init() {}
 
@@ -96,7 +98,7 @@ struct RetypoSettings: Codable, Equatable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case provider, modelByProvider, autoCopy, alwaysOnTop, nativeSpellcheck, panelFrame, currentActionID, mainTheme, shortcutByAction, shortcutByModel, acceptedModelIDsByProvider, nextModelShortcut, previousModelShortcut, followActiveScreenOnShow, historyLimit, terminalPromptImportEnabled, experimentalVSCodeAccessibleViewImport
+        case provider, modelByProvider, autoCopy, alwaysOnTop, nativeSpellcheck, panelFrame, currentActionID, mainTheme, shortcutByAction, shortcutByModel, acceptedModelIDsByProvider, nextModelShortcut, previousModelShortcut, followActiveScreenOnShow, historyLimit, terminalPromptImportEnabled, experimentalVSCodeAccessibleViewImport, smartPasteEnabled, smartPasteShortcut
     }
 
     init(from decoder: Decoder) throws {
@@ -121,6 +123,8 @@ struct RetypoSettings: Codable, Equatable {
         historyLimit = try container.decodeIfPresent(Int.self, forKey: .historyLimit) ?? historyLimit
         terminalPromptImportEnabled = try container.decodeIfPresent(Bool.self, forKey: .terminalPromptImportEnabled) ?? terminalPromptImportEnabled
         experimentalVSCodeAccessibleViewImport = try container.decodeIfPresent(Bool.self, forKey: .experimentalVSCodeAccessibleViewImport) ?? experimentalVSCodeAccessibleViewImport
+        smartPasteEnabled = try container.decodeIfPresent(Bool.self, forKey: .smartPasteEnabled) ?? smartPasteEnabled
+        smartPasteShortcut = try container.decodeIfPresent(String.self, forKey: .smartPasteShortcut) ?? smartPasteShortcut
     }
 }
 

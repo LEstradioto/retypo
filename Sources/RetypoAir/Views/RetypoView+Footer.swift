@@ -3,7 +3,6 @@ import SwiftUI
 extension RetypoView {
     var footerStatus: some View {
         HStack(spacing: 7) {
-            modeMenu
             candidatesIconButton
             modelMenu
             settingsButton
@@ -22,23 +21,9 @@ extension RetypoView {
         .padding(.bottom, 7)
     }
 
-    private var modeMenu: some View {
-        Menu {
-            ForEach(state.enabledActions) { action in
-                Button(action.title) { state.setCurrentAction(action.id) }
-            }
-        } label: {
-            footerLink(state.currentAction.title, active: true, focused: state.footerFocusIndex == 0)
-        }
-        .menuStyle(.borderlessButton)
-        .fixedSize()
-        .background(Capsule(style: .continuous).fill(state.footerFocusIndex == 0 ? Color.accentColor.opacity(0.13) : Color.clear))
-        .overlay(Capsule(style: .continuous).strokeBorder(state.footerFocusIndex == 0 ? Color.accentColor.opacity(0.42) : Color.clear, lineWidth: 1))
-    }
-
     private var candidatesIconButton: some View {
         Button { state.toggleCandidateOverlay() } label: {
-            footerIcon("rectangle.stack", active: state.showCandidateOverlay, focused: state.footerFocusIndex == 1)
+            footerIcon("rectangle.stack", active: state.showCandidateOverlay, focused: state.footerFocusIndex == 0)
         }
         .buttonStyle(.plain)
         .help("Candidates / variations")
@@ -55,16 +40,16 @@ extension RetypoView {
                 }
             }
         } label: {
-            footerLink(state.modelLabel, active: state.selectedModel != nil, focused: state.footerFocusIndex == 2, maxWidth: 170)
+            footerLink(state.modelLabel, active: state.selectedModel != nil, focused: state.footerFocusIndex == 1, maxWidth: 170)
         }
         .menuStyle(.borderlessButton)
-        .background(Capsule(style: .continuous).fill(state.footerFocusIndex == 2 ? Color.accentColor.opacity(0.13) : Color.clear))
-        .overlay(Capsule(style: .continuous).strokeBorder(state.footerFocusIndex == 2 ? Color.accentColor.opacity(0.42) : Color.clear, lineWidth: 1))
+        .background(Capsule(style: .continuous).fill(state.footerFocusIndex == 1 ? Color.accentColor.opacity(0.13) : Color.clear))
+        .overlay(Capsule(style: .continuous).strokeBorder(state.footerFocusIndex == 1 ? Color.accentColor.opacity(0.42) : Color.clear, lineWidth: 1))
     }
 
     private var settingsButton: some View {
         Button { state.requestSettings() } label: {
-            footerSettingsIcon(focused: state.footerFocusIndex == 3)
+            footerSettingsIcon(focused: state.footerFocusIndex == 2)
         }
         .buttonStyle(.plain)
         .pointingCursor()
@@ -72,7 +57,7 @@ extension RetypoView {
 
     private var undoButton: some View {
         Button { state.undoEditorChange() } label: {
-            footerIcon("arrow.uturn.backward", active: state.canUndoEditorChange, focused: state.footerFocusIndex == 4)
+            footerIcon("arrow.uturn.backward", active: state.canUndoEditorChange, focused: state.footerFocusIndex == 3)
         }
         .buttonStyle(.plain)
         .keyboardShortcut("z", modifiers: .command)
@@ -82,7 +67,7 @@ extension RetypoView {
 
     private var redoButton: some View {
         Button { state.redoEditorChange() } label: {
-            footerIcon("arrow.uturn.forward", active: state.canRedoEditorChange, focused: state.footerFocusIndex == 5)
+            footerIcon("arrow.uturn.forward", active: state.canRedoEditorChange, focused: state.footerFocusIndex == 4)
         }
         .buttonStyle(.plain)
         .keyboardShortcut("Z", modifiers: [.command, .shift])
@@ -96,7 +81,7 @@ extension RetypoView {
             Text("Session: \(state.cost.sessionCostLabel)")
             Text("Today: \(state.cost.dayCostLabel)")
         } label: {
-            footerLink(costLabel, active: state.cost.lastCost.costUSD != nil || state.cost.lastCostIsSubscription, focused: state.footerFocusIndex == 6, maxWidth: 92)
+            footerLink(costLabel, active: state.cost.lastCost.costUSD != nil || state.cost.lastCostIsSubscription, focused: state.footerFocusIndex == 5, maxWidth: 92)
         }
         .menuStyle(.borderlessButton)
     }

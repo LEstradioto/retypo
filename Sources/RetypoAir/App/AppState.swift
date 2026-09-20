@@ -4,7 +4,7 @@ import AppKit
 
 @MainActor
 final class AppState: ObservableObject {
-    let footerFocusItemCount = 7
+    let footerFocusItemCount = 6
 
     @Published var settings: RetypoSettings
     @Published var inputText: String = ""
@@ -17,7 +17,13 @@ final class AppState: ObservableObject {
     @Published var diffText: String = ""
     @Published var inlineHighlightRanges: [NSRange] = []
     @Published var showSettings = false
-    @Published var selectedLauncherModeIndex = 0
+    /// Cmd+D mode picker lives in the main window header. Index tracks the
+    /// highlighted pill; arrows move it, Enter runs it.
+    @Published var headerModePickerVisible = false
+    @Published var headerModeIndex = 0
+    /// Whether the system clipboard currently holds importable text. Drives
+    /// the smart-paste dot in the header; refreshed on show/copy/import.
+    @Published var clipboardHasText = false
     @Published var actions: [EditAction]
     @Published var history: [HistoryEntry]
     @Published var draftSnapshots: [DraftSnapshot]

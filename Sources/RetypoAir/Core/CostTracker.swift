@@ -85,6 +85,31 @@ final class CostTracker: ObservableObject {
         if changed { PricingStore.save(pricing) }
     }
 
+    /// Fill pricing keys we have never seen from the models.dev snapshot.
+    /// Only missing keys are inserted: provider list data, bundled defaults,
+    /// and anything the user typed in Settings always win. Returns how many
+    /// keys were added, for the refresh status line.
+    @discardableResult
+    func mergeFetchedPricing(_ fetched: [String: ModelPricing]) -> Int {
+        let merged = Self.mergingFetchedPricing(fetched, into: pricing)
+        pricing = merged.pricing
+        if merged.inserted > 0 { PricingStore.save(pricing) }
+        return merged.inserted
+    }
+
+    nonisolated static func mergingFetchedPricing(
+        _ fetched: [String: ModelPricing],
+        into pricing: [String: ModelPricing]
+    ) -> (pricing: [String: ModelPricing], inserted: Int) {
+        var pricing = pricing
+        var inserted = 0
+        for (key, value) in fetched where pricing[key] == nil {
+            pricing[key] = value
+            inserted += 1
+        }
+        return (pricing, inserted)
+    }
+
     func pricingBindingValue(for provider: ProviderKind, model: String) -> ModelPricing {
         pricing[PricingStore.key(provider: provider, model: model)] ?? .zero
     }

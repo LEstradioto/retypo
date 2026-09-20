@@ -7,7 +7,76 @@ extension AppState {
         if matchesActionShortcut(shortcut) { return true }
         if matchesModelNavigationShortcut(shortcut) { return true }
         if matchesPerModelShortcut(shortcut) { return true }
+        if matchesSmartPasteShortcut(shortcut) { return true }
         return false
+    }
+
+    /// Human-readable owner of a normalized shortcut, or nil when free.
+    /// `excludingAction` skips one mode so re-saving its own combo passes.
+    func shortcutOwner(_ shortcut: String, excludingAction actionID: String? = nil) -> String? {
+        guard !shortcut.isEmpty else { return nil }
+        if let owner = actionShortcutOwner(shortcut, excluding: actionID) { return owner }
+        if let owner = modelShortcutOwner(shortcut) { return owner }
+        if settings.smartPasteEnabled,
+           ShortcutFormatter.normalize(settings.smartPasteShortcut) == shortcut { return "Smart paste" }
+        return nil
+    }
+
+    private func actionShortcutOwner(_ shortcut: String, excluding actionID: String?) -> String? {
+        for action in actions where action.id != actionID {
+            if ShortcutFormatter.normalize(settings.shortcutByAction[action.id] ?? "") == shortcut {
+                return "mode “\(action.title)”"
+            }
+        }
+        return nil
+    }
+
+    private func modelShortcutOwner(_ shortcut: String) -> String? {
+        if ShortcutFormatter.normalize(settings.nextModelShortcut) == shortcut { return "Next model" }
+        if ShortcutFormatter.normalize(settings.previousModelShortcut) == shortcut { return "Previous model" }
+        for (key, value) in settings.shortcutByModel where ShortcutFormatter.normalize(value) == shortcut {
+            return "model \(key.components(separatedBy: "::").last ?? key)"
+        }
+        return nil
+    }
+
+    /// Assign a shortcut to a mode. Empty clears. Returns an error message
+    /// when the combo belongs to someone else — the caller shows it inline.
+    @discardableResult
+    func claimActionShortcut(_ rawShortcut: String, for actionID: String) -> String? {
+        let shortcut = ShortcutFormatter.normalize(rawShortcut)
+        if shortcut.isEmpty {
+            settings.shortcutByAction[actionID] = ""
+            saveSettings()
+            return nil
+        }
+        if let owner = shortcutOwner(shortcut, excludingAction: actionID) {
+            status = "Shortcut taken by \(owner)"
+            return "Taken by \(owner)"
+        }
+        settings.shortcutByAction[actionID] = shortcut
+        saveSettings()
+        status = "Shortcut \(shortcut)"
+        return nil
+    }
+
+    /// Same guard for the smart-paste shortcut in Settings.
+    @discardableResult
+    func claimSmartPasteShortcut(_ rawShortcut: String) -> String? {
+        let shortcut = ShortcutFormatter.normalize(rawShortcut)
+        if shortcut.isEmpty {
+            settings.smartPasteShortcut = ""
+            saveSettings()
+            return nil
+        }
+        if let owner = shortcutOwner(shortcut), owner != "Smart paste" {
+            status = "Shortcut taken by \(owner)"
+            return "Taken by \(owner)"
+        }
+        settings.smartPasteShortcut = shortcut
+        saveSettings()
+        status = "Smart paste \(shortcut)"
+        return nil
     }
 
     private func matchesActionShortcut(_ shortcut: String) -> Bool {
@@ -45,6 +114,13 @@ extension AppState {
         return false
     }
 
+    private func matchesSmartPasteShortcut(_ shortcut: String) -> Bool {
+        guard settings.smartPasteEnabled else { return false }
+        guard ShortcutFormatter.normalize(settings.smartPasteShortcut) == shortcut else { return false }
+        doSmartPaste()
+        return true
+    }
+
     func toggleAlwaysOnTop() {
         settings.alwaysOnTop.toggle()
         host?.setAlwaysOnTop(settings.alwaysOnTop)
@@ -55,6 +131,7 @@ extension AppState {
         let value = (text ?? outputText).trimmingCharacters(in: .whitespacesAndNewlines)
         guard !value.isEmpty else { return }
         ClipboardService.copy(value)
+        refreshClipboardFlag()
         status = "Copied"
     }
 }

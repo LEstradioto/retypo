@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 
 extension AppState {
@@ -12,6 +13,33 @@ extension AppState {
         pendingImport = PendingImport(text: text, source: source)
         status = "Confirm import from \(source)"
         return true
+    }
+
+    /// Smart paste: pull the system clipboard into the import-confirm flow.
+    /// Fires from the header dot or the smart-paste shortcut while the panel
+    /// is open. Skips when the clipboard is empty or already matches the
+    /// editor — that's the "smart" part.
+    func doSmartPaste() {
+        guard settings.smartPasteEnabled else { return }
+        refreshClipboardFlag()
+        guard let text = NSPasteboard.general.string(forType: .string)?
+            .trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty else {
+            status = "Clipboard is empty"
+            return
+        }
+        guard text != inputText.trimmingCharacters(in: .whitespacesAndNewlines) else {
+            status = "Already matches clipboard"
+            return
+        }
+        if receiveExternalImport(text, source: "Clipboard") {
+            host?.setImportConfirmationVisible(true)
+        }
+    }
+
+    func refreshClipboardFlag() {
+        let text = NSPasteboard.general.string(forType: .string)?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        clipboardHasText = !(text?.isEmpty ?? true)
     }
 
     func confirmPendingImport() {
@@ -77,10 +105,18 @@ extension AppState {
             let models = try await llm.router.listModels(for: provider)
             llm.modelsByProvider[provider] = models
             mergePricingDefaults(for: provider, models: models)
-            status = models.isEmpty ? "No models returned" : "Loaded \(models.count) models"
+            status = models.isEmpty ? "No models returned" : "Loaded \(models.count) models\(await fetchedPricingSuffix())"
         } catch {
             report(error, while: "Refresh models")
         }
         llm.isLoadingModels = false
+    }
+
+    /// Best-effort models.dev refresh. Offline or malformed responses stay
+    /// silent — bundled defaults already cover the readout.
+    private func fetchedPricingSuffix() async -> String {
+        guard let fetched = try? await ModelsDevPricing.fetchSnapshot() else { return "" }
+        let inserted = cost.mergeFetchedPricing(fetched)
+        return inserted > 0 ? " · +\(inserted) prices" : ""
     }
 }

@@ -29,11 +29,11 @@ extension AuxiliaryPanelController {
         panel.contentView = roundedHostingView(rootView: CandidateOverlayWindowView().environmentObject(state), radius: 18)
         let nextItem: () -> Void = { [weak state] in
             guard let state else { return }
-            state.candidateResults.isEmpty ? state.nextLauncherMode() : state.nextCandidate()
+            state.nextCandidate()
         }
         let previousItem: () -> Void = { [weak state] in
             guard let state else { return }
-            state.candidateResults.isEmpty ? state.previousLauncherMode() : state.previousCandidate()
+            state.previousCandidate()
         }
         panel.onTabKey = nextItem
         panel.onRightKey = nextItem
@@ -57,10 +57,6 @@ extension AuxiliaryPanelController {
 @MainActor
 private func candidateEnterAction(for state: AppState?) -> Bool {
     guard let state else { return false }
-    if state.candidateResults.isEmpty {
-        Task { await state.runSelectedLauncherMode() }
-    } else {
-        state.restoreSelectedCandidateToEditor()
-    }
+    state.restoreSelectedCandidateToEditor()
     return true
 }

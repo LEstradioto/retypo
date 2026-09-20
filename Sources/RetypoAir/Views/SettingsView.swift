@@ -55,6 +55,8 @@ struct SettingsView: View {
             "editor.alwaysOnTop",
             "editor.followScreen",
             "editor.nativeSpellcheck",
+            "editor.smartPaste",
+            "editor.smartPasteShortcut",
             "terminal.promptImport",
             "terminal.vscodeAccessibleView",
             "shortcuts.previousModel",

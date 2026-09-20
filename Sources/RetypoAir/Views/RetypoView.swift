@@ -18,7 +18,7 @@ struct RetypoView: View {
         ZStack {
             background
             VStack(spacing: 0) {
-                Color.clear.frame(height: 8)
+                headerStrip
                 editorBox(minHeight: 72)
                     .padding(.horizontal, 8)
                     .padding(.bottom, 2)
@@ -60,11 +60,11 @@ struct RetypoView: View {
                 onRunAll: { Task { await state.runAllEnabledModes() } },
                 onChange: { state.onInputChanged() },
                 onCancel: { state.requestHide() },
-                onTab: { if state.showCandidateOverlay { state.candidateResults.isEmpty ? state.nextLauncherMode() : state.nextCandidate(); return true }; if state.footerFocusIndex != nil { state.nextFooterFocus(); return true }; return false },
-                onShiftTab: { if state.showCandidateOverlay { state.candidateResults.isEmpty ? state.previousLauncherMode() : state.previousCandidate(); return true }; if state.footerFocusIndex != nil { state.previousFooterFocus(); return true }; return false },
+                onTab: { if state.showCandidateOverlay { state.nextCandidate(); return true }; if state.footerFocusIndex != nil { state.nextFooterFocus(); return true }; return false },
+                onShiftTab: { if state.showCandidateOverlay { state.previousCandidate(); return true }; if state.footerFocusIndex != nil { state.previousFooterFocus(); return true }; return false },
                 onFocusCycle: { state.cycleFooterFocus() },
-                onEnterInOverlay: { if state.footerFocusIndex != nil { state.activateFooterFocus(); return true }; if state.showCandidateOverlay, state.candidateResults.isEmpty { Task { await state.runSelectedLauncherMode() }; return true }; return false },
-                onToggleOverlay: { state.toggleCandidateOverlay() },
+                onEnterInOverlay: { if state.footerFocusIndex != nil { state.activateFooterFocus(); return true }; if state.showCandidateOverlay { state.restoreSelectedCandidateToEditor(); return true }; return false },
+                onToggleOverlay: { state.toggleModePicker() },
                 onSettings: { state.requestSettings() },
                 onUndo: { state.undoEditorChange() },
                 onRedo: { state.redoEditorChange() },

@@ -1,9 +1,6 @@
 import Foundation
 
 extension AppState {
-    // Modes CRUD moved out of Settings; the header popover (modes
-    // editor) is the caller as of the next slice.
-    // periphery:ignore
     func addMode() {
         let action = EditAction(id: UUID().uuidString, title: "New mode", instruction: "Edit the text according to this instruction.", isEnabled: true)
         actions.append(action)
@@ -11,7 +8,6 @@ extension AppState {
         saveModes()
     }
 
-    // periphery:ignore
     func deleteMode(_ action: EditAction) {
         guard actions.count > 1, action.id != EditAction.freeformID else { return }
         actions.removeAll { $0.id == action.id }

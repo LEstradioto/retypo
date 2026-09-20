@@ -48,6 +48,11 @@ extension SettingsView {
                 settingToggle("Show on active screen bottom", focusID: "editor.followScreen", keyPath: \.followActiveScreenOnShow)
                 settingToggle("Native macOS spellcheck", focusID: "editor.nativeSpellcheck", keyPath: \.nativeSpellcheck)
             }
+            GridRow {
+                settingToggle("Smart paste from clipboard", focusID: "editor.smartPaste", keyPath: \.smartPasteEnabled)
+                KeyCaptureField(text: state.settings.smartPasteShortcut, commit: { state.claimSmartPasteShortcut($0) })
+                    .settingsFocus("editor.smartPasteShortcut", radius: 8)
+            }
         }
     }
 

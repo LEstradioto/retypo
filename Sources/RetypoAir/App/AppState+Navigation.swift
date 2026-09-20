@@ -32,10 +32,9 @@ extension AppState {
         Self.footerActions[index](self)
     }
 
-    /// Order matches the visual layout in `RetypoView+Footer`: mode,
-    /// candidates icon, model, settings, undo, redo, cost.
+    /// Order matches the visual layout in `RetypoView+Footer`: candidates
+    /// icon, model, settings, undo, redo, cost. (Mode lives in the header.)
     private static let footerActions: [(AppState) -> Void] = [
-        { $0.activateModeCycle() },
         { $0.toggleCandidateOverlay() },
         { $0.selectAdjacentModel(direction: 1) },
         { $0.requestSettings() },
@@ -44,36 +43,44 @@ extension AppState {
         { $0.showCostStatus() }
     ]
 
-    private func activateModeCycle() {
-        guard let currentIndex = enabledActions.firstIndex(where: { $0.id == currentAction.id }) else { return }
-        let next = enabledActions[(currentIndex + 1) % enabledActions.count]
-        setCurrentAction(next.id)
-    }
-
     private func showCostStatus() {
         status = "Last \(cost.lastCostLabel) · Session \(cost.sessionCostLabel) · Today \(cost.dayCostLabel)"
     }
 
-    func nextLauncherMode() {
-        moveLauncherMode(direction: 1)
+    /// Cmd+D entry point. With candidate results open it toggles that
+    /// overlay; otherwise it opens the mode picker in the main header.
+    func toggleModePicker() {
+        guard candidateResults.isEmpty else {
+            toggleCandidateOverlay()
+            return
+        }
+        headerModePickerVisible.toggle()
+        if headerModePickerVisible {
+            headerModeIndex = enabledActions.firstIndex(where: { $0.id == currentAction.id }) ?? 0
+        }
     }
 
-    func previousLauncherMode() {
-        moveLauncherMode(direction: -1)
+    func nextHeaderMode() {
+        moveHeaderMode(direction: 1)
     }
 
-    func moveLauncherMode(direction: Int) {
+    func previousHeaderMode() {
+        moveHeaderMode(direction: -1)
+    }
+
+    func moveHeaderMode(direction: Int) {
         guard !enabledActions.isEmpty else { return }
-        selectedLauncherModeIndex = (selectedLauncherModeIndex + direction + enabledActions.count) % enabledActions.count
-        settings.currentActionID = enabledActions[selectedLauncherModeIndex].id
+        headerModeIndex = (headerModeIndex + direction + enabledActions.count) % enabledActions.count
+        settings.currentActionID = enabledActions[headerModeIndex].id
         saveSettings()
     }
 
-    func runSelectedLauncherMode() async {
-        guard enabledActions.indices.contains(selectedLauncherModeIndex) else { return }
-        let action = enabledActions[selectedLauncherModeIndex]
+    func runSelectedHeaderMode() async {
+        guard enabledActions.indices.contains(headerModeIndex) else { return }
+        let action = enabledActions[headerModeIndex]
         setCurrentAction(action.id)
-        await runAction(action, source: "candidate")
+        headerModePickerVisible = false
+        await runAction(action, source: "header")
         // Freeform routes through its own modal flow — don't try to wrap
         // any leftover diff here, that's stale state from a previous run.
         if action.id == EditAction.freeformID { return }
