@@ -5,35 +5,6 @@ extension SettingsView {
         Binding(get: { state.settings[keyPath: keyPath] }, set: { state.settings[keyPath: keyPath] = $0; state.saveSettings() })
     }
 
-    func actionShortcutBinding(_ actionID: String) -> Binding<String> {
-        Binding(
-            get: { state.settings.shortcutByAction[actionID] ?? "" },
-            set: { state.settings.shortcutByAction[actionID] = $0; state.saveSettings() }
-        )
-    }
-
-    func modeTitleBinding(_ actionID: String) -> Binding<String> {
-        Binding(
-            get: { state.actions.first(where: { $0.id == actionID })?.title ?? "" },
-            set: { newValue in
-                guard var action = state.actions.first(where: { $0.id == actionID }) else { return }
-                action.title = newValue
-                state.updateMode(action)
-            }
-        )
-    }
-
-    func modeInstructionBinding(_ actionID: String) -> Binding<String> {
-        Binding(
-            get: { state.actions.first(where: { $0.id == actionID })?.instruction ?? "" },
-            set: { newValue in
-                guard var action = state.actions.first(where: { $0.id == actionID }) else { return }
-                action.instruction = newValue
-                state.updateMode(action)
-            }
-        )
-    }
-
     func pricingInputBinding(_ modelID: String) -> Binding<Double> {
         Binding(
             get: { state.pricingBindingValue(for: state.selectedProvider, model: modelID).inputPerMillion },

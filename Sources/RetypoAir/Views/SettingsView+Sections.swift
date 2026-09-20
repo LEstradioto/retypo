@@ -30,34 +30,18 @@ extension SettingsView {
 
     var editorSection: some View {
         SettingsCard(title: "Editor") {
-            HStack(spacing: 12) {
-                Picker("Layout", selection: Binding(get: { state.settings.editorLayout }, set: { state.settings.editorLayout = $0; state.saveSettings() })) {
-                    ForEach(EditorLayoutMode.allCases) { Text($0.displayName).tag($0) }
-                }
-                .settingsFocus("editor.layout", radius: 8, keyboardFocusable: true, activate: {
-                    state.settings.editorLayout = state.settings.editorLayout == .stacked ? .inline : .stacked
-                    state.saveSettings()
-                    return true
-                })
-                Picker("Theme", selection: Binding(get: { state.settings.mainTheme }, set: { state.settings.mainTheme = $0; state.saveSettings() })) {
-                    ForEach(MainTheme.allCases) { Text($0.displayName).tag($0) }
-                }
-                .settingsFocus("editor.theme", radius: 8, keyboardFocusable: true, activate: cycleTheme)
+            Picker("Theme", selection: Binding(get: { state.settings.mainTheme }, set: { state.settings.mainTheme = $0; state.saveSettings() })) {
+                ForEach(MainTheme.allCases) { Text($0.displayName).tag($0) }
             }
+            .settingsFocus("editor.theme", radius: 8, keyboardFocusable: true, activate: cycleTheme)
             editorToggleGrid
-            Stepper("Debounce: \(state.settings.debounceMs)ms", value: Binding(get: { state.settings.debounceMs }, set: { state.settings.debounceMs = $0; state.saveSettings() }), in: 200...2000, step: 100)
-                .settingsFocus("editor.debounce", radius: 8, keyboardFocusable: true, activate: incrementDebounce)
         }
     }
 
     private var editorToggleGrid: some View {
         Grid(alignment: .leading, horizontalSpacing: 16, verticalSpacing: 6) {
             GridRow {
-                settingToggle("Auto run after pause", focusID: "editor.autoRun", keyPath: \.autoCorrect)
                 settingToggle("Auto copy result", focusID: "editor.autoCopy", keyPath: \.autoCopy)
-            }
-            GridRow {
-                settingToggle("Hide after copy", focusID: "editor.hideAfterCopy", keyPath: \.hideAfterCopy)
                 alwaysOnTopToggle
             }
             GridRow {

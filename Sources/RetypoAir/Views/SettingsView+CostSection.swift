@@ -45,11 +45,55 @@ extension SettingsView {
     }
 
     private func historyRow(_ entry: HistoryEntry) -> some View {
-        HStack(spacing: 10) {
-            historyRowContent(entry)
-            Spacer()
-            historyRowRestoreButton(entry)
+        DisclosureGroup(isExpanded: historyExpandedBinding(entry.id)) {
+            historyExpandedMessages(entry)
+        } label: {
+            HStack(spacing: 10) {
+                historyRowContent(entry)
+                Spacer()
+                historyRowRestoreButton(entry)
+            }
         }
+    }
+
+    private func historyExpandedBinding(_ id: UUID) -> Binding<Bool> {
+        Binding(
+            get: { expandedHistoryIDs.contains(id) },
+            set: { expanded in
+                if expanded {
+                    expandedHistoryIDs.insert(id)
+                } else {
+                    expandedHistoryIDs.remove(id)
+                }
+            }
+        )
+    }
+
+    private func historyExpandedMessages(_ entry: HistoryEntry) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            historyMessageBlock(title: "Input", text: entry.input)
+            historyMessageBlock(title: "Output", text: entry.output)
+            if !entry.diff.isEmpty {
+                historyMessageBlock(title: "Diff", text: entry.diff)
+            }
+        }
+        .padding(.leading, 16)
+        .padding(.top, 4)
+    }
+
+    private func historyMessageBlock(title: String, text: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title)
+                .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                .foregroundStyle(Color.accentColor.opacity(0.85))
+            Text(text.isEmpty ? "—" : text)
+                .font(.system(size: 11.5, weight: .regular, design: .monospaced))
+                .foregroundStyle(.primary.opacity(0.85))
+                .textSelection(.enabled)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(8)
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Color.black.opacity(0.045)))
     }
 
     private func historyRowContent(_ entry: HistoryEntry) -> some View {

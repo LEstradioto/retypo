@@ -41,6 +41,5 @@ extension AuxiliaryPanelController {
     func presentPanel(_ panel: NSPanel) {
         NSApp.activate(ignoringOtherApps: true)
         panel.makeKeyAndOrderFront(nil)
-        panel.orderFrontRegardless()
     }
 }

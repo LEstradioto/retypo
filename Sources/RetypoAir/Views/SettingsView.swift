@@ -3,8 +3,8 @@ import SwiftUI
 struct SettingsView: View {
     @EnvironmentObject var state: AppState
     @EnvironmentObject var settingsFocus: SettingsFocusCoordinator
-    @State var editingModeID: String?
     @State var historyDisplayMode: HistoryDisplayMode = .input
+    @State var expandedHistoryIDs: Set<UUID> = []
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -22,7 +22,6 @@ struct SettingsView: View {
                             editorSection
                             terminalImportSection
                             accessSection
-                            modeSection
                             historySection
                         }
                         .padding(18)
@@ -51,15 +50,11 @@ struct SettingsView: View {
             "model.provider",
             "model.model",
             "model.refresh",
-            "editor.layout",
             "editor.theme",
-            "editor.autoRun",
             "editor.autoCopy",
-            "editor.hideAfterCopy",
             "editor.alwaysOnTop",
             "editor.followScreen",
             "editor.nativeSpellcheck",
-            "editor.debounce",
             "terminal.promptImport",
             "terminal.vscodeAccessibleView",
             "shortcuts.previousModel",
@@ -71,29 +66,11 @@ struct SettingsView: View {
             ids.append(modelFocusID(model.id, "pricing.input"))
             ids.append(modelFocusID(model.id, "pricing.output"))
         }
-        ids.append("modes.add")
-        for action in state.actions {
-            ids.append(modeFocusID(action.id, "enabled"))
-            ids.append(modeFocusID(action.id, "select"))
-            ids.append(modeFocusID(action.id, "edit"))
-            if editingModeID == action.id {
-                ids.append(modeFocusID(action.id, "title"))
-                ids.append(modeFocusID(action.id, "shortcut"))
-                ids.append(modeFocusID(action.id, "instruction"))
-            }
-            if state.actions.count > 1 {
-                ids.append(modeFocusID(action.id, "delete"))
-            }
-        }
         ids.append("history.limit")
         ids.append("history.display")
         ids.append(contentsOf: state.history.map { historyFocusID($0.id) })
         ids.append(contentsOf: state.draftSnapshots.prefix(5).map { draftFocusID($0.id) })
         return ids
-    }
-
-    func modeFocusID(_ actionID: String, _ field: String) -> String {
-        "mode.\(actionID).\(field)"
     }
 
     func modelFocusID(_ modelID: String, _ field: String) -> String {
@@ -141,19 +118,12 @@ struct SettingsView: View {
         return true
     }
 
-    func incrementDebounce() -> Bool {
-        let next = state.settings.debounceMs >= 2000 ? 200 : state.settings.debounceMs + 100
-        state.settings.debounceMs = next
-        state.saveSettings()
-        return true
-    }
-
     var settingsHeader: some View {
         HStack(alignment: .center, spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Settings")
                     .font(.system(size: 24, weight: .semibold, design: .rounded))
-                Text("Configure provider, modes, shortcuts, and the main panel.")
+                Text("Configure provider, shortcuts, and the main panel.")
                     .font(.system(size: 12, weight: .medium, design: .monospaced))
                     .foregroundStyle(.secondary)
             }

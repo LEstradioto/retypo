@@ -24,20 +24,32 @@ struct PanelFrame: Codable, Equatable {
     }
 }
 
-enum EditorLayoutMode: String, CaseIterable, Identifiable, Codable {
-    case stacked
-    case inline
-
-    var id: String { rawValue }
-    var displayName: String { self == .stacked ? "Stacked" : "Inline diff" }
-}
-
 enum MainTheme: String, CaseIterable, Identifiable, Codable {
     case glass
-    case lighter
+    case dark
+    case system
 
     var id: String { rawValue }
-    var displayName: String { self == .glass ? "Glass" : "Lighter" }
+    /// `glass` is the historic default look and stays as the Light theme.
+    /// The legacy `lighter` value decodes to it (see `init(from:)`).
+    var displayName: String {
+        switch self {
+        case .glass: "Light"
+        case .dark: "Dark"
+        case .system: "System"
+        }
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let raw = try container.decode(String.self)
+        self = switch raw {
+        case "glass", "lighter": .glass
+        case "dark": .dark
+        case "system": .system
+        default: .glass
+        }
+    }
 }
 
 struct RetypoSettings: Codable, Equatable {
@@ -45,16 +57,11 @@ struct RetypoSettings: Codable, Equatable {
     var modelByProvider: [ProviderKind: String] = [
         .anthropic: "claude-haiku-4-5-20251001"
     ]
-    var autoCorrect: Bool = false
     var autoCopy: Bool = true
-    var debounceMs: Int = 500
     var alwaysOnTop: Bool = false
-    var hideAfterCopy: Bool = false
-    var enterToCorrect: Bool = true
     var nativeSpellcheck: Bool = true
     var panelFrame: PanelFrame = PanelFrame()
     var currentActionID: String = "correct"
-    var editorLayout: EditorLayoutMode = .inline
     var mainTheme: MainTheme = .glass
     var shortcutByAction: [String: String] = [
         "correct": "cmd+1",
@@ -89,7 +96,7 @@ struct RetypoSettings: Codable, Equatable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case provider, modelByProvider, autoCorrect, autoCopy, debounceMs, alwaysOnTop, hideAfterCopy, enterToCorrect, nativeSpellcheck, panelFrame, currentActionID, editorLayout, mainTheme, shortcutByAction, shortcutByModel, acceptedModelIDsByProvider, nextModelShortcut, previousModelShortcut, followActiveScreenOnShow, historyLimit, terminalPromptImportEnabled, experimentalVSCodeAccessibleViewImport
+        case provider, modelByProvider, autoCopy, alwaysOnTop, nativeSpellcheck, panelFrame, currentActionID, mainTheme, shortcutByAction, shortcutByModel, acceptedModelIDsByProvider, nextModelShortcut, previousModelShortcut, followActiveScreenOnShow, historyLimit, terminalPromptImportEnabled, experimentalVSCodeAccessibleViewImport
     }
 
     init(from decoder: Decoder) throws {
@@ -97,16 +104,11 @@ struct RetypoSettings: Codable, Equatable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         provider = try container.decodeIfPresent(ProviderKind.self, forKey: .provider) ?? provider
         modelByProvider = try container.decodeIfPresent([ProviderKind: String].self, forKey: .modelByProvider) ?? modelByProvider
-        autoCorrect = try container.decodeIfPresent(Bool.self, forKey: .autoCorrect) ?? autoCorrect
         autoCopy = try container.decodeIfPresent(Bool.self, forKey: .autoCopy) ?? autoCopy
-        debounceMs = try container.decodeIfPresent(Int.self, forKey: .debounceMs) ?? debounceMs
         alwaysOnTop = try container.decodeIfPresent(Bool.self, forKey: .alwaysOnTop) ?? alwaysOnTop
-        hideAfterCopy = try container.decodeIfPresent(Bool.self, forKey: .hideAfterCopy) ?? hideAfterCopy
-        enterToCorrect = try container.decodeIfPresent(Bool.self, forKey: .enterToCorrect) ?? enterToCorrect
         nativeSpellcheck = try container.decodeIfPresent(Bool.self, forKey: .nativeSpellcheck) ?? nativeSpellcheck
         panelFrame = try container.decodeIfPresent(PanelFrame.self, forKey: .panelFrame) ?? panelFrame
         currentActionID = try container.decodeIfPresent(String.self, forKey: .currentActionID) ?? currentActionID
-        editorLayout = try container.decodeIfPresent(EditorLayoutMode.self, forKey: .editorLayout) ?? editorLayout
         mainTheme = try container.decodeIfPresent(MainTheme.self, forKey: .mainTheme) ?? mainTheme
         if let shortcuts = try container.decodeIfPresent([String: String].self, forKey: .shortcutByAction) {
             shortcutByAction.merge(shortcuts) { _, new in new }

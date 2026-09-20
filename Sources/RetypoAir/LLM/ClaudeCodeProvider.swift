@@ -5,9 +5,9 @@ import Foundation
 ///
 /// Costs ~7s and ~18k tokens of harness context per call (Claude Code sends
 /// its own tool definitions and system prompt no matter what `--system-prompt`
-/// says), so `AppState.autoRunEnabled` keeps auto-correct off for this
-/// provider — see `--bare` in `claude --help` for why the light path is not an
-/// option: it reads `ANTHROPIC_API_KEY` only and never the subscription.
+/// says) — every run is manual (Enter), never on a typing pause. See `--bare`
+/// in `claude --help` for why the light path is not an option: it reads
+/// `ANTHROPIC_API_KEY` only and never the subscription.
 final class ClaudeCodeProvider: LLMProviderClient {
     private let tool = "claude"
     private let locate: (String) -> URL?

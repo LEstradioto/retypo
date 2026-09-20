@@ -50,7 +50,6 @@ extension AppState {
             showCandidateOverlay: showCandidateOverlay,
             selectedCandidateIndex: selectedCandidateIndex,
             wordsChangedLast: wordsChangedLast,
-            lastAutoSubmittedHash: lastAutoSubmittedHash,
             typingStartedAt: typingStartedAt
         )
     }
@@ -65,7 +64,6 @@ extension AppState {
         showCandidateOverlay = snapshot.showCandidateOverlay
         selectedCandidateIndex = min(snapshot.selectedCandidateIndex, max(0, candidateResults.count - 1))
         wordsChangedLast = snapshot.wordsChangedLast
-        lastAutoSubmittedHash = snapshot.lastAutoSubmittedHash
         typingStartedAt = snapshot.typingStartedAt ?? Date()
         draftPersistence.save(inputText)
         host?.setCandidatesVisible(showCandidateOverlay)

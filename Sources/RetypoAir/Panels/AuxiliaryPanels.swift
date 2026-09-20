@@ -105,7 +105,7 @@ final class AuxiliaryPanelController {
         let visible = screen.visibleFrame
         let main = mainPanel.frame
         let width = min(max(360, main.width), visible.width - 48)
-        let height: CGFloat = 92
+        let height: CGFloat = 60
         let x = min(max(visible.minX + 24, main.midX - width / 2), visible.maxX - width - 24)
         let y = min(visible.maxY - height - 16, main.maxY + 10)
         panel.setFrame(NSRect(x: x, y: y, width: width, height: height), display: false)

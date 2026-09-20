@@ -24,8 +24,8 @@ extension AuxiliaryPanelController {
     }
 
     private func makeImportPromptPanel(state: AppState) -> KeyableAuxiliaryPanel {
-        let panel = makePanel(width: 460, height: 92, minWidth: 340, minHeight: 78)
-        panel.contentView = roundedHostingView(rootView: ImportConfirmWindowView().environmentObject(state), radius: 18)
+        let panel = makePanel(width: 480, height: 60, minWidth: 340, minHeight: 52)
+        panel.contentView = roundedHostingView(rootView: ImportConfirmWindowView().environmentObject(state), radius: 14)
         panel.onEnterKey = { [weak state] in
             state?.confirmPendingImport()
             return true

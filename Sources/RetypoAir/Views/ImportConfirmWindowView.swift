@@ -1,5 +1,8 @@
 import SwiftUI
 
+/// Compact confirmation alert for an incoming external text import.
+/// Single row with an accent bar on the left edge so it reads as an
+/// alert, not a second editor window.
 struct ImportConfirmWindowView: View {
     @EnvironmentObject private var state: AppState
 
@@ -11,32 +14,38 @@ struct ImportConfirmWindowView: View {
                 .ignoresSafeArea()
             content
         }
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(Color.white.opacity(0.16), lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Color.white.opacity(0.16), lineWidth: 1))
     }
 
     private var content: some View {
-        HStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Paste into Retypo Air?")
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+        HStack(spacing: 0) {
+            RoundedRectangle(cornerRadius: 2, style: .continuous)
+                .fill(Color.accentColor.opacity(0.9))
+                .frame(width: 3)
+                .padding(.vertical, 10)
+                .padding(.leading, 10)
+            VStack(alignment: .leading, spacing: 1) {
+                Text("Paste into Retypo?")
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
                 Text(summary)
-                    .font(.system(size: 10.5, weight: .medium, design: .monospaced))
+                    .font(.system(size: 10, weight: .medium, design: .monospaced))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .truncationMode(.tail)
             }
+            .padding(.leading, 10)
             Spacer(minLength: 8)
             Button("Cancel") { state.cancelPendingImport() }
                 .buttonStyle(.borderless)
-                .font(.system(size: 11.5, weight: .semibold, design: .rounded))
+                .font(.system(size: 11, weight: .semibold, design: .rounded))
                 .pointingCursor()
             Button("Paste") { state.confirmPendingImport() }
                 .buttonStyle(SettingsCapsuleButtonStyle(active: true))
                 .pointingCursor()
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.trailing, 12)
+        .padding(.vertical, 8)
     }
 
     private var summary: String {

@@ -41,7 +41,6 @@ extension AppState {
         selectedCandidateIndex = 0
         footerFocusIndex = nil
         wordsChangedLast = 0
-        lastAutoSubmittedHash = nil
         typingStartedAt = Date()
         draftPersistence.save(inputText)
         status = "Imported text from \(source)"
@@ -54,36 +53,15 @@ extension AppState {
         draftPersistence.save(inputText)
         scheduleDraftSnapshot()
         inlineHighlightRanges = []
-        guard !suppressNextInputChange else {
+        if suppressNextInputChange {
             suppressNextInputChange = false
-            return
         }
-        scheduleAutoCorrectIfEligible()
     }
 
     private func commitNonRedoEdit() {
         if !suppressNextInputChange, editor.canRedo {
             editor.dropRedo()
             publishUndoRedoAvailability()
-        }
-    }
-
-    /// Flips the preference, and says so when the provider overrides it.
-    func toggleAutoRun() {
-        settings.autoCorrect.toggle()
-        saveSettings()
-        guard settings.autoCorrect, settings.provider.usesLocalCLI else { return }
-        status = "Auto-run stays off for \(settings.provider.displayName) — press Enter to run"
-    }
-
-    private func scheduleAutoCorrectIfEligible() {
-        guard autoRunEnabled else { return }
-        guard CorrectionPolicy.shouldAutoCorrect(inputText) else { return }
-        let hash = inputText.hashValue
-        guard hash != lastAutoSubmittedHash else { return }
-        debouncer.schedule(milliseconds: settings.debounceMs) { [weak self] in
-            guard let self else { return }
-            await self.runCurrentAction(source: "auto")
         }
     }
 

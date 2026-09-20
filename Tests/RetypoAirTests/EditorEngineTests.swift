@@ -14,7 +14,6 @@ final class EditorEngineTests: XCTestCase {
             showCandidateOverlay: false,
             selectedCandidateIndex: 0,
             wordsChangedLast: 0,
-            lastAutoSubmittedHash: nil,
             typingStartedAt: nil
         )
     }

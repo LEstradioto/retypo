@@ -33,13 +33,11 @@ extension AppState {
     }
 
     /// Order matches the visual layout in `RetypoView+Footer`: mode,
-    /// candidates icon, model, layout, auto, settings, undo, redo, cost.
+    /// candidates icon, model, settings, undo, redo, cost.
     private static let footerActions: [(AppState) -> Void] = [
         { $0.activateModeCycle() },
         { $0.toggleCandidateOverlay() },
         { $0.selectAdjacentModel(direction: 1) },
-        { $0.toggleEditorLayout() },
-        { $0.toggleAutoCorrect() },
         { $0.requestSettings() },
         { _ = $0.undoEditorChange() },
         { _ = $0.redoEditorChange() },
@@ -50,16 +48,6 @@ extension AppState {
         guard let currentIndex = enabledActions.firstIndex(where: { $0.id == currentAction.id }) else { return }
         let next = enabledActions[(currentIndex + 1) % enabledActions.count]
         setCurrentAction(next.id)
-    }
-
-    private func toggleEditorLayout() {
-        settings.editorLayout = settings.editorLayout == .stacked ? .inline : .stacked
-        saveSettings()
-    }
-
-    private func toggleAutoCorrect() {
-        settings.autoCorrect.toggle()
-        saveSettings()
     }
 
     private func showCostStatus() {

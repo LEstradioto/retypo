@@ -2,65 +2,52 @@ import SwiftUI
 
 struct RetypoView: View {
     @EnvironmentObject var state: AppState
+    @Environment(\.colorScheme) private var colorScheme
 
-    var isLighter: Bool { state.settings.mainTheme == .lighter }
+    /// Light keeps the historic glass look. Dark deepens it.
+    /// System follows the macOS appearance.
+    var isDark: Bool {
+        switch state.settings.mainTheme {
+        case .dark: true
+        case .glass: false
+        case .system: colorScheme == .dark
+        }
+    }
 
     var body: some View {
         ZStack {
             background
             VStack(spacing: 0) {
-                Color.clear.frame(height: isLighter ? 6 : 8)
-                if state.settings.editorLayout == .stacked {
-                    stackedEditor
-                } else {
-                    inlineEditor
-                }
+                Color.clear.frame(height: 8)
+                editorBox(minHeight: 72)
+                    .padding(.horizontal, 8)
+                    .padding(.bottom, 2)
                 footerStatus
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: isLighter ? 16 : 20, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: isLighter ? 18 : 24, style: .continuous)
-                .strokeBorder(Color.white.opacity(isLighter ? 0.10 : 0.18), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .strokeBorder(Color.white.opacity(0.18), lineWidth: 1)
         )
     }
 
     @ViewBuilder
     private var background: some View {
-        if isLighter {
-            Color.clear.ignoresSafeArea()
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Color.white.opacity(0.035))
-                .ignoresSafeArea()
-        } else {
-            VisualEffectView(material: .hudWindow, blendingMode: .behindWindow)
-                .ignoresSafeArea()
-            LinearGradient(
-                colors: [Color.white.opacity(0.13), Color.black.opacity(0.07)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
+        VisualEffectView(material: .hudWindow, blendingMode: .behindWindow)
             .ignoresSafeArea()
-        }
+        LinearGradient(
+            colors: isDark
+                ? [Color.white.opacity(0.06), Color.black.opacity(0.22)]
+                : [Color.white.opacity(0.13), Color.black.opacity(0.07)],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+        .ignoresSafeArea()
     }
 
     var statColor: Color {
-        Color.secondary.opacity(isLighter ? 0.74 : 0.98)
-    }
-
-    private var stackedEditor: some View {
-        VStack(spacing: isLighter ? 6 : 8) {
-            editorBox(minHeight: 44)
-            outputBox
-        }
-        .padding(.horizontal, isLighter ? 6 : 8)
-        .padding(.bottom, isLighter ? 1 : 2)
-    }
-
-    private var inlineEditor: some View {
-        editorBox(minHeight: 72)
-            .padding(.horizontal, isLighter ? 6 : 8)
-            .padding(.bottom, isLighter ? 1 : 2)
+        Color.secondary.opacity(0.98)
     }
 
     private func editorBox(minHeight: CGFloat) -> some View {
@@ -69,7 +56,6 @@ struct RetypoView: View {
                 text: $state.inputText,
                 nativeSpellcheck: state.settings.nativeSpellcheck,
                 highlightRanges: state.inlineHighlightRanges,
-                lighter: isLighter,
                 onSubmit: { Task { await state.runCurrentAction(source: "enter") } },
                 onRunAll: { Task { await state.runAllEnabledModes() } },
                 onChange: { state.onInputChanged() },
@@ -91,39 +77,13 @@ struct RetypoView: View {
     }
 
     private var editorBackground: some View {
-        RoundedRectangle(cornerRadius: isLighter ? 12 : 15, style: .continuous)
-            .fill(Color(nsColor: .textBackgroundColor).opacity(isLighter ? 0.14 : 0.54))
-            .shadow(color: .black.opacity(isLighter ? 0.025 : 0.08), radius: isLighter ? 8 : 20, x: 0, y: isLighter ? 6 : 14)
+        RoundedRectangle(cornerRadius: 15, style: .continuous)
+            .fill(Color(nsColor: .textBackgroundColor).opacity(isDark ? 0.62 : 0.54))
+            .shadow(color: .black.opacity(0.08), radius: 20, x: 0, y: 14)
     }
 
     private var editorStroke: some View {
-        RoundedRectangle(cornerRadius: isLighter ? 12 : 15, style: .continuous)
-            .strokeBorder(Color.white.opacity(isLighter ? 0.08 : 0.12), lineWidth: 1)
-    }
-
-    private var outputBox: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            HStack(spacing: 8) {
-                Text("Result")
-                    .font(.system(size: 10.5, weight: .semibold, design: .monospaced))
-                    .foregroundStyle(.secondary)
-                Spacer()
-                Button("Copy") { state.copyOutput() }
-                    .buttonStyle(.borderless)
-                    .font(.system(size: 11, weight: .semibold, design: .rounded))
-                    .disabled(state.outputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            }
-            ScrollView {
-                Text(state.diffText.isEmpty ? "Set model in Settings. Type, Enter." : state.diffText)
-                    .font(.system(size: 11.5, weight: .regular, design: .monospaced))
-                    .foregroundStyle(state.diffText.isEmpty ? .secondary : .primary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .textSelection(.enabled)
-                    .padding(8)
-            }
-            .frame(minHeight: 30, maxHeight: 76)
-            .background(RoundedRectangle(cornerRadius: 13, style: .continuous).fill(Color.black.opacity(0.065)))
-            .overlay(RoundedRectangle(cornerRadius: 13, style: .continuous).strokeBorder(Color.white.opacity(0.07), lineWidth: 1))
-        }
+        RoundedRectangle(cornerRadius: 15, style: .continuous)
+            .strokeBorder(Color.white.opacity(0.12), lineWidth: 1)
     }
 }

@@ -5,7 +5,6 @@ struct NativeTextEditor: NSViewRepresentable {
     @Binding var text: String
     var nativeSpellcheck: Bool
     var highlightRanges: [NSRange] = []
-    var lighter: Bool = false
     var onSubmit: () -> Void
     var onRunAll: () -> Void = {}
     var onChange: () -> Void
@@ -75,12 +74,12 @@ struct NativeTextEditor: NSViewRepresentable {
         textView.isContinuousSpellCheckingEnabled = nativeSpellcheck
         textView.isGrammarCheckingEnabled = nativeSpellcheck
         textView.isAutomaticSpellingCorrectionEnabled = nativeSpellcheck
-        textView.font = NSFont.monospacedSystemFont(ofSize: lighter ? 14 : 15, weight: .regular)
+        textView.font = NSFont.monospacedSystemFont(ofSize: 15, weight: .regular)
         textView.textColor = NSColor.labelColor
         textView.insertionPointColor = NSColor.labelColor
         textView.backgroundColor = .clear
         textView.drawsBackground = false
-        textView.textContainerInset = NSSize(width: lighter ? 12 : 16, height: lighter ? 12 : 16)
+        textView.textContainerInset = NSSize(width: 16, height: 16)
         textView.minSize = NSSize(width: 0, height: 0)
         textView.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
         textView.isVerticallyResizable = true
@@ -94,8 +93,8 @@ struct NativeTextEditor: NSViewRepresentable {
         let full = NSRange(location: 0, length: (textView.string as NSString).length)
         layoutManager.removeTemporaryAttribute(.backgroundColor, forCharacterRange: full)
         layoutManager.removeTemporaryAttribute(.foregroundColor, forCharacterRange: full)
-        let color = NSColor.systemGreen.withAlphaComponent(lighter ? 0.22 : 0.28)
-        let underline = NSColor.systemGreen.withAlphaComponent(lighter ? 0.45 : 0.60)
+        let color = NSColor.systemGreen.withAlphaComponent(0.28)
+        let underline = NSColor.systemGreen.withAlphaComponent(0.60)
         for range in highlightRanges where NSMaxRange(range) <= full.length {
             layoutManager.addTemporaryAttribute(.backgroundColor, value: color, forCharacterRange: range)
             layoutManager.addTemporaryAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, forCharacterRange: range)

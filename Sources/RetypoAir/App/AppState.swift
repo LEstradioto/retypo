@@ -4,7 +4,7 @@ import AppKit
 
 @MainActor
 final class AppState: ObservableObject {
-    let footerFocusItemCount = 9
+    let footerFocusItemCount = 7
 
     @Published var settings: RetypoSettings
     @Published var inputText: String = ""
@@ -47,10 +47,8 @@ final class AppState: ObservableObject {
 
     weak var host: PanelHost?
 
-    let debouncer = Debouncer()
     let draftHistoryDebouncer = Debouncer()
     let panelFrameDebouncer = Debouncer()
-    var lastAutoSubmittedHash: Int?
     var suppressNextInputChange = false
     var typingStartedAt: Date?
     /// Last time `updateTypingStats` saw a change. Used to detect long pauses
@@ -112,13 +110,6 @@ final class AppState: ObservableObject {
 
     var selectedModel: String? {
         settings.selectedModel(for: settings.provider)
-    }
-
-    /// Auto-run stays off for the CLI providers: every call costs ~7s and
-    /// thousands of tokens of subscription quota, so firing on each typing
-    /// pause would drain the plan. Enter still runs the current mode.
-    var autoRunEnabled: Bool {
-        settings.autoCorrect && !settings.provider.usesLocalCLI
     }
 
     var enabledActions: [EditAction] {

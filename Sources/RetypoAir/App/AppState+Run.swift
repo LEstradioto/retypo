@@ -165,7 +165,6 @@ extension AppState {
         guard let model = selectedModel else { return nil }
         let original = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !original.isEmpty else { return nil }
-        lastAutoSubmittedHash = inputText.hashValue
         llm.generation += 1
         llm.isCorrecting = true
         clearLastError()

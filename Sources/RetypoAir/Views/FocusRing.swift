@@ -19,6 +19,9 @@ final class SettingsFocusCoordinator: ObservableObject {
         focusedID = order.first
     }
 
+    // Programmatic focus for the modes/shortcut editors (header
+    // popover); focusFirst/advance cover the rest.
+    // periphery:ignore
     func focus(_ id: String) {
         if order.contains(id) {
             focusedID = id

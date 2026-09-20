@@ -17,7 +17,6 @@ struct EditorSnapshot: Equatable {
     var showCandidateOverlay: Bool
     var selectedCandidateIndex: Int
     var wordsChangedLast: Int
-    var lastAutoSubmittedHash: Int?
     var typingStartedAt: Date?
 }
 

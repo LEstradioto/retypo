@@ -56,6 +56,5 @@ extension AppState {
         guard !value.isEmpty else { return }
         ClipboardService.copy(value)
         status = "Copied"
-        if settings.hideAfterCopy { host?.requestHide() }
     }
 }

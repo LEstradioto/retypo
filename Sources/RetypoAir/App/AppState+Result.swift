@@ -11,10 +11,12 @@ extension AppState {
         let costUSD = cost.recordUsage(provider: settings.provider, model: selectedModel ?? "", usage: outcome.response.usage)
         appendHistory(HistoryDraft(original: outcome.original, output: text, diff: diffText, action: outcome.action, instruction: outcome.instruction, usage: outcome.response.usage, costUSD: costUSD))
         cost.appendLedgerEntry(provider: settings.provider, model: selectedModel ?? "", usage: outcome.response.usage, costUSD: costUSD)
-        if settings.editorLayout == .inline {
-            applyInlineSubstitution(original: outcome.original, text: text)
+        if settings.autoCopy {
+            copyOutput(text)
+        } else {
+            status = outcome.changed ? "Done" : "No changes"
         }
-        finalizeOutcomeStatus(outcome, text: text)
+        applyInlineSubstitution(original: outcome.original, text: text)
     }
 
     private func applyInlineSubstitution(original: String, text: String) {
@@ -22,15 +24,6 @@ extension AppState {
         suppressNextInputChange = true
         inputText = text
         draftPersistence.save(inputText)
-        lastAutoSubmittedHash = inputText.hashValue
-    }
-
-    private func finalizeOutcomeStatus(_ outcome: ActionOutcome, text: String) {
-        if settings.autoCopy {
-            copyOutput(text)
-        } else {
-            status = outcome.changed ? "Done" : "No changes"
-        }
     }
 
     func appendCandidate(_ outcome: ActionOutcome) {

@@ -31,6 +31,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         appState.host = self
         registerHotkeys()
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(hideAuxiliaryPanelsOnResignActive),
+            name: NSApplication.didResignActiveNotification,
+            object: nil
+        )
 
         showPanel()
         Task { await appState.refreshModelsIfPossible() }
@@ -55,6 +61,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func quitApp() {
         NSApp.terminate(nil)
+    }
+
+    /// Auxiliary popovers (Paste-confirm, Cmd+D, Settings) must not linger
+    /// above other apps once Retypo loses focus. The main panel drops behind
+    /// on its own; the `.floating` aux panels don't, so order them out here.
+    @objc private func hideAuxiliaryPanelsOnResignActive() {
+        auxiliaryPanels?.hideAll()
     }
 
     func applicationDidBecomeActive(_ notification: Notification) {
