@@ -14,7 +14,7 @@ struct CandidateCard: View {
                 if isFreeform {
                     Image(systemName: "sparkles")
                         .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(Color.accentColor.opacity(0.95))
+                        .foregroundStyle(Color.retypoAccent.opacity(0.95))
                 }
                 Text(candidate.action.title)
                     .font(.system(size: 12, weight: .semibold, design: .rounded))
@@ -52,14 +52,14 @@ struct CandidateCard: View {
     }
 
     private var cardFill: Color {
-        if selected { return Color.accentColor.opacity(0.15) }
-        if isFreeform { return Color.accentColor.opacity(0.10) }
+        if selected { return Color.retypoAccent.opacity(0.15) }
+        if isFreeform { return Color.retypoAccent.opacity(0.10) }
         return Color.white.opacity(0.08)
     }
 
     private var cardStroke: Color {
-        if selected { return Color.accentColor.opacity(0.55) }
-        if isFreeform { return Color.accentColor.opacity(0.30) }
+        if selected { return Color.retypoAccent.opacity(0.55) }
+        if isFreeform { return Color.retypoAccent.opacity(0.30) }
         return Color.white.opacity(0.12)
     }
 }

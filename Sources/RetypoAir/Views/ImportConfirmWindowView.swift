@@ -21,7 +21,7 @@ struct ImportConfirmWindowView: View {
     private var content: some View {
         HStack(spacing: 0) {
             RoundedRectangle(cornerRadius: 2, style: .continuous)
-                .fill(Color.accentColor.opacity(0.9))
+                .fill(Color.retypoAccent.opacity(0.9))
                 .frame(width: 3)
                 .padding(.vertical, 10)
                 .padding(.leading, 10)

@@ -3,7 +3,6 @@ import SwiftUI
 extension RetypoView {
     var footerStatus: some View {
         HStack(spacing: 7) {
-            candidatesIconButton
             modelMenu
             settingsButton
 
@@ -15,18 +14,10 @@ extension RetypoView {
             footerStats
         }
         .font(.system(size: 10.5, weight: .medium, design: .monospaced))
-        .foregroundStyle(.secondary.opacity(0.92))
+        .foregroundStyle(isDark ? Color.primary.opacity(0.78) : .secondary.opacity(0.92))
         .padding(.horizontal, 10)
         .padding(.top, 5)
         .padding(.bottom, 7)
-    }
-
-    private var candidatesIconButton: some View {
-        Button { state.toggleCandidateOverlay() } label: {
-            footerIcon("rectangle.stack", active: state.showCandidateOverlay, focused: state.footerFocusIndex == 0)
-        }
-        .buttonStyle(.plain)
-        .help("Candidates / variations")
     }
 
     private var modelMenu: some View {
@@ -40,16 +31,16 @@ extension RetypoView {
                 }
             }
         } label: {
-            footerLink(state.modelLabel, active: state.selectedModel != nil, focused: state.footerFocusIndex == 1, maxWidth: 170)
+            footerLink(state.modelLabel, active: state.selectedModel != nil, focused: state.footerFocusIndex == 0, maxWidth: 170)
         }
         .menuStyle(.borderlessButton)
-        .background(Capsule(style: .continuous).fill(state.footerFocusIndex == 1 ? Color.accentColor.opacity(0.13) : Color.clear))
-        .overlay(Capsule(style: .continuous).strokeBorder(state.footerFocusIndex == 1 ? Color.accentColor.opacity(0.42) : Color.clear, lineWidth: 1))
+        .background(Capsule(style: .continuous).fill(state.footerFocusIndex == 0 ? Color.retypoAccent.opacity(0.13) : Color.clear))
+        .overlay(Capsule(style: .continuous).strokeBorder(state.footerFocusIndex == 0 ? Color.retypoAccent.opacity(0.42) : Color.clear, lineWidth: 1))
     }
 
     private var settingsButton: some View {
         Button { state.requestSettings() } label: {
-            footerSettingsIcon(focused: state.footerFocusIndex == 2)
+            footerSettingsIcon(focused: state.footerFocusIndex == 1)
         }
         .buttonStyle(.plain)
         .pointingCursor()
@@ -57,7 +48,7 @@ extension RetypoView {
 
     private var undoButton: some View {
         Button { state.undoEditorChange() } label: {
-            footerIcon("arrow.uturn.backward", active: state.canUndoEditorChange, focused: state.footerFocusIndex == 3)
+            footerIcon("arrow.uturn.backward", active: state.canUndoEditorChange, focused: state.footerFocusIndex == 2)
         }
         .buttonStyle(.plain)
         .keyboardShortcut("z", modifiers: .command)
@@ -67,7 +58,7 @@ extension RetypoView {
 
     private var redoButton: some View {
         Button { state.redoEditorChange() } label: {
-            footerIcon("arrow.uturn.forward", active: state.canRedoEditorChange, focused: state.footerFocusIndex == 4)
+            footerIcon("arrow.uturn.forward", active: state.canRedoEditorChange, focused: state.footerFocusIndex == 3)
         }
         .buttonStyle(.plain)
         .keyboardShortcut("Z", modifiers: [.command, .shift])
@@ -81,7 +72,7 @@ extension RetypoView {
             Text("Session: \(state.cost.sessionCostLabel)")
             Text("Today: \(state.cost.dayCostLabel)")
         } label: {
-            footerLink(costLabel, active: state.cost.lastCost.costUSD != nil || state.cost.lastCostIsSubscription, focused: state.footerFocusIndex == 5, maxWidth: 92)
+            footerLink(costLabel, active: state.cost.lastCost.costUSD != nil || state.cost.lastCostIsSubscription, focused: state.footerFocusIndex == 4, maxWidth: 92)
         }
         .menuStyle(.borderlessButton)
     }
@@ -96,7 +87,7 @@ extension RetypoView {
         Group {
             wpmText
             Text("Δ\(state.wordsChangedLast)")
-                .foregroundStyle(state.wordsChangedLast == 0 ? statColor : Color.accentColor.opacity(0.92))
+                .foregroundStyle(state.wordsChangedLast == 0 ? statColor : Color.retypoAccent.opacity(0.92))
                 .monospacedDigit()
             statusText
             Text("\(state.inputText.count)")
@@ -125,11 +116,11 @@ extension RetypoView {
             .lineLimit(1)
             .truncationMode(.middle)
             .frame(maxWidth: maxWidth, alignment: .leading)
-            .foregroundStyle(active || focused ? Color.accentColor.opacity(0.98) : Color.secondary.opacity(0.88))
+            .foregroundStyle(active || focused ? Color.retypoAccent.opacity(0.98) : (isDark ? Color.primary.opacity(0.7) : Color.secondary.opacity(0.88)))
             .padding(.horizontal, focused ? 5 : 0)
             .padding(.vertical, focused ? 2 : 0)
-            .background(Capsule(style: .continuous).fill(focused ? Color.accentColor.opacity(0.13) : Color.clear))
-            .overlay(Capsule(style: .continuous).strokeBorder(focused ? Color.accentColor.opacity(0.42) : Color.clear, lineWidth: 1))
+            .background(Capsule(style: .continuous).fill(focused ? Color.retypoAccent.opacity(0.13) : Color.clear))
+            .overlay(Capsule(style: .continuous).strokeBorder(focused ? Color.retypoAccent.opacity(0.42) : Color.clear, lineWidth: 1))
             .contentShape(Rectangle())
             .pointingCursor()
     }
@@ -137,10 +128,10 @@ extension RetypoView {
     func footerIcon(_ systemName: String, active: Bool, focused: Bool = false) -> some View {
         Image(systemName: systemName)
             .font(.system(size: 10.5, weight: .semibold))
-            .foregroundStyle(active || focused ? Color.accentColor.opacity(0.98) : Color.secondary.opacity(0.72))
+            .foregroundStyle(active || focused ? Color.retypoAccent.opacity(0.98) : (isDark ? Color.primary.opacity(0.6) : Color.secondary.opacity(0.72)))
             .frame(width: focused ? 18 : 14, height: 14)
-            .background(Capsule(style: .continuous).fill(focused ? Color.accentColor.opacity(0.13) : Color.clear))
-            .overlay(Capsule(style: .continuous).strokeBorder(focused ? Color.accentColor.opacity(0.42) : Color.clear, lineWidth: 1))
+            .background(Capsule(style: .continuous).fill(focused ? Color.retypoAccent.opacity(0.13) : Color.clear))
+            .overlay(Capsule(style: .continuous).strokeBorder(focused ? Color.retypoAccent.opacity(0.42) : Color.clear, lineWidth: 1))
             .contentShape(Rectangle())
             .pointingCursor()
     }
@@ -148,10 +139,10 @@ extension RetypoView {
     func footerSettingsIcon(focused: Bool = false) -> some View {
         Image(systemName: "gearshape.fill")
             .font(.system(size: 12.5, weight: .semibold))
-            .foregroundStyle(focused ? Color.accentColor.opacity(1.0) : Color.secondary.opacity(0.92))
+            .foregroundStyle(focused ? Color.retypoAccent.opacity(1.0) : (isDark ? Color.primary.opacity(0.8) : Color.secondary.opacity(0.92)))
             .frame(width: focused ? 25 : 23, height: 18)
-            .background(Capsule(style: .continuous).fill(focused ? Color.accentColor.opacity(0.13) : Color.white.opacity(0.045)))
-            .overlay(Capsule(style: .continuous).strokeBorder(focused ? Color.accentColor.opacity(0.42) : Color.white.opacity(0.08), lineWidth: 1))
+            .background(Capsule(style: .continuous).fill(focused ? Color.retypoAccent.opacity(0.13) : Color.white.opacity(0.045)))
+            .overlay(Capsule(style: .continuous).strokeBorder(focused ? Color.retypoAccent.opacity(0.42) : Color.white.opacity(0.08), lineWidth: 1))
             .contentShape(Rectangle())
             .pointingCursor()
     }

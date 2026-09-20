@@ -10,10 +10,9 @@ extension RetypoView {
             HStack(spacing: 7) {
                 modeCapsule
                 Spacer(minLength: 6)
-                smartPasteDot
             }
             .font(.system(size: 10.5, weight: .medium, design: .monospaced))
-            .foregroundStyle(.secondary.opacity(0.92))
+            .foregroundStyle(isDark ? Color.primary.opacity(0.78) : .secondary.opacity(0.92))
             .padding(.horizontal, 10)
             .padding(.top, 7)
             .padding(.bottom, 5)
@@ -29,7 +28,7 @@ extension RetypoView {
                 footerLink(state.currentAction.title, active: true, focused: state.headerModePickerVisible)
                 Text(modeShortcutLabel)
                     .font(.system(size: 10, weight: .medium, design: .monospaced))
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(isDark ? .secondary : .tertiary)
             }
         }
         .buttonStyle(.plain)
@@ -40,23 +39,6 @@ extension RetypoView {
     private var modeShortcutLabel: String {
         let shortcut = state.settings.shortcutByAction[state.currentAction.id] ?? ""
         return shortcut.isEmpty ? "⌘D" : "\(shortcut) · ⌘D"
-    }
-
-    @ViewBuilder
-    private var smartPasteDot: some View {
-        if state.settings.smartPasteEnabled, state.clipboardHasText {
-            Button { state.doSmartPaste() } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: "clipboard.fill")
-                        .font(.system(size: 10, weight: .semibold))
-                    Text(state.settings.smartPasteShortcut.isEmpty ? "paste" : state.settings.smartPasteShortcut)
-                }
-                .foregroundStyle(Color.accentColor.opacity(0.98))
-            }
-            .buttonStyle(.plain)
-            .help("Smart paste: import clipboard")
-            .pointingCursor()
-        }
     }
 }
 
@@ -101,7 +83,18 @@ struct ModeStripKeyView: NSViewRepresentable {
     var onEscape: () -> Void
 
     func makeNSView(context: Context) -> StripKeyCatcher {
-        StripKeyCatcher()
+        let catcher = StripKeyCatcher()
+        // Claim here, not in SwiftUI onAppear: the AppKit view may not be
+        // in a window yet when appear fires, so that claim silently misses
+        // and arrows never reach the picker.
+        DispatchQueue.main.async { [weak catcher] in
+            guard let catcher, let window = catcher.window else {
+                DebugLog.log("mode picker focus claim failed: catcher has no window")
+                return
+            }
+            DebugLog.log("mode picker focus claimed=\(window.makeFirstResponder(catcher))")
+        }
+        return catcher
     }
 
     func updateNSView(_ catcher: StripKeyCatcher, context: Context) {

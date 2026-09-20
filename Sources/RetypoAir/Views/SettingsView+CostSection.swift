@@ -6,7 +6,7 @@ extension SettingsView {
             historySectionHeader
             Text("Saved: \(state.history.count)/\(state.settings.historyLimit) LLM runs · \(state.draftSnapshots.count) draft backups")
                 .font(.system(size: 11, weight: .medium, design: .monospaced))
-                .foregroundStyle(Color.accentColor.opacity(0.85))
+                .foregroundStyle(Color.retypoAccent.opacity(0.85))
             if state.history.isEmpty && state.draftSnapshots.isEmpty {
                 Text("No history yet.").foregroundStyle(.secondary)
             } else {
@@ -45,28 +45,34 @@ extension SettingsView {
     }
 
     private func historyRow(_ entry: HistoryEntry) -> some View {
-        DisclosureGroup(isExpanded: historyExpandedBinding(entry.id)) {
-            historyExpandedMessages(entry)
-        } label: {
+        VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 10) {
-                historyRowContent(entry)
+                Button { toggleHistoryExpanded(entry.id) } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: expandedHistoryIDs.contains(entry.id) ? "chevron.down" : "chevron.right")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundStyle(.secondary)
+                            .frame(width: 12)
+                        historyRowContent(entry)
+                    }
+                }
+                .buttonStyle(.plain)
+                .pointingCursor()
                 Spacer()
                 historyRowRestoreButton(entry)
+            }
+            if expandedHistoryIDs.contains(entry.id) {
+                historyExpandedMessages(entry)
             }
         }
     }
 
-    private func historyExpandedBinding(_ id: UUID) -> Binding<Bool> {
-        Binding(
-            get: { expandedHistoryIDs.contains(id) },
-            set: { expanded in
-                if expanded {
-                    expandedHistoryIDs.insert(id)
-                } else {
-                    expandedHistoryIDs.remove(id)
-                }
-            }
-        )
+    private func toggleHistoryExpanded(_ id: UUID) {
+        if expandedHistoryIDs.contains(id) {
+            expandedHistoryIDs.remove(id)
+        } else {
+            expandedHistoryIDs.insert(id)
+        }
     }
 
     private func historyExpandedMessages(_ entry: HistoryEntry) -> some View {
@@ -85,7 +91,7 @@ extension SettingsView {
         VStack(alignment: .leading, spacing: 2) {
             Text(title)
                 .font(.system(size: 10, weight: .semibold, design: .monospaced))
-                .foregroundStyle(Color.accentColor.opacity(0.85))
+                .foregroundStyle(Color.retypoAccent.opacity(0.85))
             Text(text.isEmpty ? "—" : text)
                 .font(.system(size: 11.5, weight: .regular, design: .monospaced))
                 .foregroundStyle(.primary.opacity(0.85))
@@ -102,7 +108,7 @@ extension SettingsView {
                 if entry.actionID == EditAction.freeformID {
                     Image(systemName: "sparkles")
                         .font(.system(size: 9, weight: .semibold))
-                        .foregroundStyle(Color.accentColor.opacity(0.9))
+                        .foregroundStyle(Color.retypoAccent.opacity(0.9))
                 }
                 Text("\(entry.actionTitle) · \(entry.model)")
                     .font(.system(size: 12, weight: .semibold, design: .monospaced))

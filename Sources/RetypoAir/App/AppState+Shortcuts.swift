@@ -131,7 +131,6 @@ extension AppState {
         let value = (text ?? outputText).trimmingCharacters(in: .whitespacesAndNewlines)
         guard !value.isEmpty else { return }
         ClipboardService.copy(value)
-        refreshClipboardFlag()
         status = "Copied"
     }
 }

@@ -15,13 +15,12 @@ extension AppState {
         return true
     }
 
-    /// Smart paste: pull the system clipboard into the import-confirm flow.
-    /// Fires from the header dot or the smart-paste shortcut while the panel
-    /// is open. Skips when the clipboard is empty or already matches the
-    /// editor — that's the "smart" part.
+    /// Smart paste: pull the system clipboard straight into the editor.
+    /// Fires only from its shortcut while the panel is open — no header
+    /// alert, no confirmation modal. Skips when the clipboard is empty or
+    /// already matches the editor; that's the "smart" part.
     func doSmartPaste() {
         guard settings.smartPasteEnabled else { return }
-        refreshClipboardFlag()
         guard let text = NSPasteboard.general.string(forType: .string)?
             .trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty else {
             status = "Clipboard is empty"
@@ -31,15 +30,7 @@ extension AppState {
             status = "Already matches clipboard"
             return
         }
-        if receiveExternalImport(text, source: "Clipboard") {
-            host?.setImportConfirmationVisible(true)
-        }
-    }
-
-    func refreshClipboardFlag() {
-        let text = NSPasteboard.general.string(forType: .string)?
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        clipboardHasText = !(text?.isEmpty ?? true)
+        importExternalText(text, source: "Clipboard")
     }
 
     func confirmPendingImport() {

@@ -79,7 +79,7 @@ struct SettingsFocusStyle: ViewModifier {
 
     private var focusOverlay: some View {
         RoundedRectangle(cornerRadius: radius, style: .continuous)
-            .strokeBorder(isVisuallyFocused ? Color.accentColor.opacity(0.86) : Color.clear, lineWidth: 1.6)
+            .strokeBorder(isVisuallyFocused ? Color.retypoAccent.opacity(0.86) : Color.clear, lineWidth: 1.6)
     }
 
     private func handleAppear() {

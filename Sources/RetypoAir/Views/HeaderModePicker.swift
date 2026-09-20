@@ -25,7 +25,6 @@ struct HeaderModePicker: View {
         }
         .padding(.horizontal, 10)
         .padding(.bottom, 8)
-        .onAppear { ModeStripFocus.claim() }
         .onChange(of: state.headerModePickerVisible) { visible in
             if !visible { editingModeID = nil }
         }
@@ -63,7 +62,7 @@ struct HeaderModePicker: View {
                 .padding(.horizontal, 11)
                 .padding(.vertical, 5)
                 .background(Capsule(style: .continuous).fill(
-                    selected ? Color.accentColor.opacity(0.85) : Color.white.opacity(0.07)))
+                    selected ? Color.retypoAccent.opacity(0.85) : Color.white.opacity(0.07)))
                 .overlay(Capsule(style: .continuous).strokeBorder(
                     selected ? Color.clear : Color.white.opacity(0.1), lineWidth: 1))
         }
@@ -114,7 +113,7 @@ struct HeaderModePicker: View {
                 .font(.system(size: 10, weight: .semibold))
                 .foregroundStyle(destructive ? Color.red.opacity(0.85) : Color.primary.opacity(0.8))
                 .frame(width: 22, height: 20)
-                .background(Circle().fill((destructive ? Color.red : Color.accentColor).opacity(0.09)))
+                .background(Circle().fill((destructive ? Color.red : Color.retypoAccent).opacity(0.09)))
         }
         .buttonStyle(.plain)
         .help(help)

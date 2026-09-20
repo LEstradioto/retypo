@@ -1,8 +1,15 @@
 import SwiftUI
 import AppKit
 
-struct VisualEffectView: NSViewRepresentable {
-    var material: NSVisualEffectView.Material
+extension Color {
+    /// House accent for custom chrome (links, pills, focus, alerts).
+    /// Orange holds contrast on gray in both Light and Dark, where the
+    /// system blue washed out. System controls (Toggle, Picker) keep the
+    /// macOS default.
+    static var retypoAccent: Color { .orange }
+}
+
+struct VisualEffectView: NSViewRepresentable {    var material: NSVisualEffectView.Material
     var blendingMode: NSVisualEffectView.BlendingMode
 
     func makeNSView(context: Context) -> NSVisualEffectView {
@@ -52,7 +59,7 @@ struct SettingsCard<Content: View>: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: 22, style: .continuous).fill(Color.white.opacity(0.13)))
         .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(Color.white.opacity(0.18), lineWidth: 1))
-        .shadow(color: Color.accentColor.opacity(0.055), radius: 24, x: 0, y: 14)
+        .shadow(color: Color.retypoAccent.opacity(0.055), radius: 24, x: 0, y: 14)
     }
 }
 
@@ -83,7 +90,7 @@ struct SettingsCapsuleButtonStyle: ButtonStyle {
             .foregroundStyle(active ? Color.white : Color.primary)
             .padding(.horizontal, 12)
             .padding(.vertical, 7)
-            .background(Capsule(style: .continuous).fill(active ? Color.accentColor.opacity(configuration.isPressed ? 0.68 : 0.84) : Color.white.opacity(configuration.isPressed ? 0.12 : 0.08)))
+            .background(Capsule(style: .continuous).fill(active ? Color.retypoAccent.opacity(configuration.isPressed ? 0.68 : 0.84) : Color.white.opacity(configuration.isPressed ? 0.12 : 0.08)))
             .overlay(Capsule(style: .continuous).strokeBorder(Color.white.opacity(0.13), lineWidth: 1))
             .scaleEffect(configuration.isPressed ? 0.98 : 1)
     }
@@ -97,7 +104,7 @@ struct SettingsIconButtonStyle: ButtonStyle {
             .font(.system(size: 12, weight: .semibold))
             .foregroundStyle(destructive ? Color.red.opacity(0.85) : Color.primary.opacity(0.80))
             .frame(width: 26, height: 24)
-            .background(Circle().fill((destructive ? Color.red : Color.accentColor).opacity(configuration.isPressed ? 0.18 : 0.09)))
+            .background(Circle().fill((destructive ? Color.red : Color.retypoAccent).opacity(configuration.isPressed ? 0.18 : 0.09)))
             .scaleEffect(configuration.isPressed ? 0.96 : 1)
             .pointingCursor()
     }

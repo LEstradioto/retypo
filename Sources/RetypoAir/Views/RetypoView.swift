@@ -28,7 +28,7 @@ struct RetypoView: View {
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .strokeBorder(Color.white.opacity(0.18), lineWidth: 1)
+                .strokeBorder(Color.white.opacity(isDark ? 0.26 : 0.18), lineWidth: 1)
         )
     }
 
@@ -38,7 +38,7 @@ struct RetypoView: View {
             .ignoresSafeArea()
         LinearGradient(
             colors: isDark
-                ? [Color.white.opacity(0.06), Color.black.opacity(0.22)]
+                ? [Color.white.opacity(0.03), Color.black.opacity(0.38)]
                 : [Color.white.opacity(0.13), Color.black.opacity(0.07)],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
@@ -47,7 +47,7 @@ struct RetypoView: View {
     }
 
     var statColor: Color {
-        Color.secondary.opacity(0.98)
+        isDark ? Color.primary.opacity(0.85) : Color.secondary.opacity(0.98)
     }
 
     private func editorBox(minHeight: CGFloat) -> some View {
@@ -78,12 +78,12 @@ struct RetypoView: View {
 
     private var editorBackground: some View {
         RoundedRectangle(cornerRadius: 15, style: .continuous)
-            .fill(Color(nsColor: .textBackgroundColor).opacity(isDark ? 0.62 : 0.54))
+            .fill(Color(nsColor: .textBackgroundColor).opacity(isDark ? 0.68 : 0.54))
             .shadow(color: .black.opacity(0.08), radius: 20, x: 0, y: 14)
     }
 
     private var editorStroke: some View {
         RoundedRectangle(cornerRadius: 15, style: .continuous)
-            .strokeBorder(Color.white.opacity(0.12), lineWidth: 1)
+            .strokeBorder(Color.white.opacity(isDark ? 0.16 : 0.12), lineWidth: 1)
     }
 }

@@ -11,7 +11,7 @@ struct SettingsView: View {
             ZStack {
                 VisualEffectView(material: .popover, blendingMode: .behindWindow)
                     .ignoresSafeArea()
-                LinearGradient(colors: [Color.white.opacity(0.18), Color.accentColor.opacity(0.035), Color.black.opacity(0.05)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                LinearGradient(colors: [Color.white.opacity(0.18), Color.retypoAccent.opacity(0.035), Color.black.opacity(0.05)], startPoint: .topLeading, endPoint: .bottomTrailing)
                     .ignoresSafeArea()
 
                 VStack(spacing: 0) {

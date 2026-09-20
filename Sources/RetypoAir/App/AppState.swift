@@ -4,7 +4,7 @@ import AppKit
 
 @MainActor
 final class AppState: ObservableObject {
-    let footerFocusItemCount = 6
+    let footerFocusItemCount = 5
 
     @Published var settings: RetypoSettings
     @Published var inputText: String = ""
@@ -21,9 +21,6 @@ final class AppState: ObservableObject {
     /// highlighted pill; arrows move it, Enter runs it.
     @Published var headerModePickerVisible = false
     @Published var headerModeIndex = 0
-    /// Whether the system clipboard currently holds importable text. Drives
-    /// the smart-paste dot in the header; refreshed on show/copy/import.
-    @Published var clipboardHasText = false
     @Published var actions: [EditAction]
     @Published var history: [HistoryEntry]
     @Published var draftSnapshots: [DraftSnapshot]

@@ -32,10 +32,10 @@ extension AppState {
         Self.footerActions[index](self)
     }
 
-    /// Order matches the visual layout in `RetypoView+Footer`: candidates
-    /// icon, model, settings, undo, redo, cost. (Mode lives in the header.)
+    /// Order matches the visual layout in `RetypoView+Footer`: model,
+    /// settings, undo, redo, cost. (Mode lives in the header; candidates
+    /// open automatically after a run.)
     private static let footerActions: [(AppState) -> Void] = [
-        { $0.toggleCandidateOverlay() },
         { $0.selectAdjacentModel(direction: 1) },
         { $0.requestSettings() },
         { _ = $0.undoEditorChange() },

@@ -80,7 +80,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         positionPanelForActiveScreenIfNeeded()
         panel.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
-        state?.refreshClipboardFlag()
         DispatchQueue.main.async { [weak self] in
             self?.focusEditorIfPossible()
         }
