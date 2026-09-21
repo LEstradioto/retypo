@@ -110,7 +110,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func positionPanelForActiveScreenIfNeeded() {
         guard state?.settings.followActiveScreenOnShow == true, let panel else { return }
-        let screen = screenForCurrentMouse() ?? panel.screen ?? NSScreen.main
+        let screen = screenForFrontmostApp() ?? screenForCurrentMouse() ?? panel.screen ?? NSScreen.main
         guard let screen else { return }
         let visible = screen.visibleFrame
         let width = max(280, visible.width / 3)
@@ -118,6 +118,41 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let x = visible.minX + (visible.width - width) / 2
         let y = visible.minY + 34
         panel.setFrame(NSRect(x: x, y: y, width: width, height: height), display: false)
+    }
+
+    /// The screen holding the app you're working in — not the mouse, which
+    /// often rests on the other display. Falls back to the mouse when
+    /// Retypo itself (or nothing external) is frontmost.
+    private func screenForFrontmostApp() -> NSScreen? {
+        guard let app = NSWorkspace.shared.frontmostApplication,
+              app.processIdentifier != NSRunningApplication.current.processIdentifier,
+              let center = mainWindowCenter(of: app.processIdentifier) else { return nil }
+        return NSScreen.screens.first { NSMouseInRect(center, $0.frame, false) }
+    }
+
+    /// Center of an app's largest on-screen window, in Cocoa coordinates.
+    /// Skips menu-bar extras and tooltips via a minimum size.
+    private func mainWindowCenter(of pid: pid_t) -> NSPoint? {
+        guard let list = CGWindowListCopyWindowInfo([.optionOnScreenOnly], kCGNullWindowID) as? [[String: Any]],
+              let primaryHeight = NSScreen.screens.first(where: { $0.frame.minX == 0 && $0.frame.minY == 0 })?.frame.height else { return nil }
+        var best: (area: CGFloat, center: NSPoint)?
+        for info in list {
+            guard (info[kCGWindowOwnerPID as String] as? pid_t) == pid,
+                  let bounds = info[kCGWindowBounds as String] as? [String: CGFloat],
+                  let center = Self.cocoaCenter(cgBounds: bounds, primaryHeight: primaryHeight) else { continue }
+            let area = (bounds["Width"] ?? 0) * (bounds["Height"] ?? 0)
+            if best.map({ area > $0.area }) ?? true { best = (area, center) }
+        }
+        return best?.center
+    }
+
+    /// CG window bounds use a top-left origin; Cocoa screens use
+    /// bottom-left of the primary display. Returns nil for tiny windows.
+    nonisolated static func cocoaCenter(cgBounds bounds: [String: CGFloat], primaryHeight: CGFloat) -> NSPoint? {
+        guard let x = bounds["X"], let y = bounds["Y"],
+              let width = bounds["Width"], let height = bounds["Height"],
+              width > 200, height > 200 else { return nil }
+        return NSPoint(x: x + width / 2, y: primaryHeight - (y + height / 2))
     }
 
     private func screenForCurrentMouse() -> NSScreen? {

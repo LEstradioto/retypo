@@ -47,6 +47,23 @@ final class AppDelegateLifecycleTests: XCTestCase {
         XCTAssertEqual(settingsPersistence.savedSettings.count, 1)
     }
 
+    func testCocoaCenterFlipsYAgainstPrimaryHeight() {
+        let center = AppDelegate.cocoaCenter(
+            cgBounds: ["X": 100, "Y": 200, "Width": 800, "Height": 600],
+            primaryHeight: 1440
+        )
+        XCTAssertEqual(center?.x, 500)
+        XCTAssertEqual(center?.y, 940)
+    }
+
+    func testCocoaCenterRejectsTinyWindows() {
+        XCTAssertNil(AppDelegate.cocoaCenter(
+            cgBounds: ["X": 0, "Y": 0, "Width": 100, "Height": 100],
+            primaryHeight: 1440
+        ))
+        XCTAssertNil(AppDelegate.cocoaCenter(cgBounds: [:], primaryHeight: 1440))
+    }
+
     private func makeDelegate(
         draftPersistence: RecordingDraftPersistence,
         settingsPersistence: RecordingSettingsPersistence
