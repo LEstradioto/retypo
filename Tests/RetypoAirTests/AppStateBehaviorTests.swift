@@ -77,23 +77,46 @@ final class AppStateBehaviorTests: XCTestCase {
         XCTAssertEqual(state.status, "Draft restored")
     }
 
-    func testExternalImportGoesStraightToEditor() {
+    func testExternalImportStagesWithoutTouchingEditor() {
         let (state, _) = makeState()
         state.inputText = ""
 
         state.receiveExternalImport("Clipboard text", source: "Safari")
 
-        XCTAssertEqual(state.inputText, "Clipboard text")
-        XCTAssertEqual(state.status, "Imported text from Safari")
+        XCTAssertEqual(state.stagedImport?.text, "Clipboard text")
+        XCTAssertEqual(state.stagedImport?.source, "Safari")
+        XCTAssertEqual(state.inputText, "")
     }
 
-    func testMatchingExternalImportReplacesEditor() {
+    func testMatchingExternalImportStillStages() {
         let (state, _) = makeState()
         state.inputText = "Same text"
 
         state.receiveExternalImport("Same text", source: "TextEdit")
 
+        XCTAssertEqual(state.stagedImport?.text, "Same text")
         XCTAssertEqual(state.inputText, "Same text")
+    }
+
+    func testSmartPasteWritesStagedTextAndConsumesStage() {
+        let (state, _) = makeState()
+        state.inputText = ""
+        state.receiveExternalImport("Staged words", source: "Safari")
+
+        state.doSmartPaste()
+
+        XCTAssertEqual(state.inputText, "Staged words")
+        XCTAssertNil(state.stagedImport)
+    }
+
+    func testSmartPasteWithoutStageExplainsItself() {
+        let (state, _) = makeState()
+        state.inputText = "Keep me"
+
+        state.doSmartPaste()
+
+        XCTAssertEqual(state.inputText, "Keep me")
+        XCTAssertTrue(state.status.contains("Nothing staged"), state.status)
     }
 
     /// Regression for the ESC-in-candidates fix: clearCandidateResults wipes

@@ -10,6 +10,7 @@ extension RetypoView {
             HStack(spacing: 7) {
                 modeCapsule
                 Spacer(minLength: 6)
+                stagedDot
             }
             .font(.system(size: 10.5, weight: .medium, design: .monospaced))
             .foregroundStyle(Palette.secondaryText)
@@ -39,6 +40,31 @@ extension RetypoView {
     private var modeShortcutLabel: String {
         let shortcut = state.settings.shortcutByAction[state.currentAction.id] ?? ""
         return shortcut.isEmpty ? "⌘D" : "\(shortcut) · ⌘D"
+    }
+
+    /// Lights up only while staged import text waits for a conscious paste.
+    /// Click pastes exactly like the smart-paste shortcut.
+    @ViewBuilder
+    private var stagedDot: some View {
+        if state.stagedImport != nil, state.settings.smartPasteEnabled {
+            Button { state.doSmartPaste() } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "clipboard.fill")
+                        .font(.system(size: 10, weight: .semibold))
+                    Text(state.settings.smartPasteShortcut.isEmpty ? "paste" : state.settings.smartPasteShortcut)
+                }
+                .foregroundStyle(Color.retypoAccent)
+            }
+            .buttonStyle(.plain)
+            .help(stagedHelp)
+            .pointingCursor()
+        }
+    }
+
+    private var stagedHelp: String {
+        guard let staged = state.stagedImport else { return "Smart paste" }
+        let preview = staged.text.trimmingCharacters(in: .whitespacesAndNewlines).prefix(60)
+        return "Paste staged text from \(staged.source): \(preview)"
     }
 }
 

@@ -1,35 +1,36 @@
-import AppKit
 import Foundation
 
 extension AppState {
-    /// External text (global hotkey import, terminal prompt, smart paste)
-    /// goes straight into the editor — no confirmation modal. Undo (Cmd+Z)
-    /// restores whatever was there before.
+    /// External text (global hotkey import, terminal prompt) is staged, not
+    /// pasted: the header dot lights up and the smart-paste shortcut (or a
+    /// click on the dot) writes it into the editor. A conscious decision,
+    /// never automatic. Undo (Cmd+Z) still restores after a paste.
     func receiveExternalImport(_ text: String, source: String) {
         let trimmedIncoming = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedIncoming.isEmpty, !text.hasPrefix("__RETYP_AIR_IMPORT_EMPTY_") else {
             status = "No selected text imported"
             return
         }
-        importExternalText(text, source: source)
+        stagedImport = StagedImport(text: text, source: source)
+        status = "Staged from \(source) — \(pasteHint) to paste"
     }
 
-    /// Smart paste: pull the system clipboard straight into the editor.
-    /// Fires only from its shortcut while the panel is open — no header
-    /// alert, no confirmation modal. Skips when the clipboard is empty or
-    /// already matches the editor; that's the "smart" part.
+    /// The conscious paste: writes the staged import into the editor and
+    /// consumes the stage. Fires only from its shortcut (or the header dot)
+    /// while the panel is open. Cmd+V stays native and is untouched.
     func doSmartPaste() {
         guard settings.smartPasteEnabled else { return }
-        guard let text = NSPasteboard.general.string(forType: .string)?
-            .trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty else {
-            status = "Clipboard is empty"
+        guard let staged = stagedImport else {
+            status = "Nothing staged — grab text with the global shortcut first"
             return
         }
-        guard text != inputText.trimmingCharacters(in: .whitespacesAndNewlines) else {
-            status = "Already matches clipboard"
-            return
-        }
-        importExternalText(text, source: "Clipboard")
+        stagedImport = nil
+        importExternalText(staged.text, source: staged.source)
+    }
+
+    private var pasteHint: String {
+        let shortcut = ShortcutFormatter.normalize(settings.smartPasteShortcut)
+        return shortcut.isEmpty ? "paste" : shortcut
     }
 
     func importExternalText(_ text: String, source: String) {

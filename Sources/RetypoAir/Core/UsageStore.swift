@@ -109,3 +109,12 @@ struct CandidateResult: Identifiable, Hashable {
     var usage: TokenUsage
     var costUSD: Double?
 }
+
+/// Text captured from another app by the global hotkey, waiting for a
+/// conscious paste (smart-paste shortcut or header dot). Never written
+/// into the editor on its own.
+struct StagedImport: Identifiable, Hashable {
+    var id: UUID = UUID()
+    var text: String
+    var source: String
+}

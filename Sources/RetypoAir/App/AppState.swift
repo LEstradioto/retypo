@@ -30,6 +30,9 @@ final class AppState: ObservableObject {
     @Published var wordsPerMinute: Double = 0
     @Published var wordsChangedLast = 0
     @Published var footerFocusIndex: Int? = nil
+    /// Text captured from another app, waiting for a conscious paste via
+    /// the smart-paste shortcut or the header dot. Never auto-fills.
+    @Published var stagedImport: StagedImport?
     @Published var canUndoEditorChange = false
     @Published var canRedoEditorChange = false
     /// Live instruction text for the Freeform mode. Populated only while
