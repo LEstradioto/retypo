@@ -75,7 +75,7 @@ extension SettingsView {
                 alwaysOnTopToggle
             }
             GridRow {
-                settingToggle("Show on active screen bottom", focusID: "editor.followScreen", keyPath: \.followActiveScreenOnShow)
+                settingToggle("Follow active display", focusID: "editor.followScreen", keyPath: \.followActiveScreenOnShow)
                 settingToggle("Native macOS spellcheck", focusID: "editor.nativeSpellcheck", keyPath: \.nativeSpellcheck)
             }
             GridRow {

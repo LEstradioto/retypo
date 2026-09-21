@@ -91,6 +91,7 @@ struct HeaderModePicker: View {
             }
             if selectedAction != nil {
                 KeyCaptureField(text: selectedShortcut, commit: commitSelectedShortcut)
+                    .id(selectedAction?.id ?? "")
             }
             Spacer(minLength: 4)
             Text("←/→ choose · Enter runs · Esc closes")

@@ -75,14 +75,14 @@ final class ShortcutConflictTests: XCTestCase {
         XCTAssertEqual(state.headerModeIndex, count - 1)
     }
 
-    func testToggleModePickerPrefersCandidateOverlay() {
+    func testToggleModePickerIgnoresCandidateResults() {
         let state = makeState()
         state.candidateResults = [
             CandidateResult(action: EditAction.defaults[0], output: "x", diff: "d", usage: .zero, costUSD: nil)
         ]
         state.toggleModePicker()
-        XCTAssertTrue(state.showCandidateOverlay)
-        XCTAssertFalse(state.headerModePickerVisible)
+        XCTAssertTrue(state.headerModePickerVisible)
+        XCTAssertFalse(state.showCandidateOverlay)
     }
 
     func testToggleModePickerOpensHeaderWhenNoResults() {

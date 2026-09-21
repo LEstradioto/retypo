@@ -47,13 +47,9 @@ extension AppState {
         status = "Last \(cost.lastCostLabel) · Session \(cost.sessionCostLabel) · Today \(cost.dayCostLabel)"
     }
 
-    /// Cmd+D entry point. With candidate results open it toggles that
-    /// overlay; otherwise it opens the mode picker in the main header.
+    /// Cmd+D owns the header picker exclusively: it only ever toggles it.
+    /// Nothing else shows or hides it — not runs, not the candidates flow.
     func toggleModePicker() {
-        guard candidateResults.isEmpty else {
-            toggleCandidateOverlay()
-            return
-        }
         headerModePickerVisible.toggle()
         if headerModePickerVisible {
             headerModeIndex = enabledActions.firstIndex(where: { $0.id == currentAction.id }) ?? 0
@@ -79,16 +75,7 @@ extension AppState {
         guard enabledActions.indices.contains(headerModeIndex) else { return }
         let action = enabledActions[headerModeIndex]
         setCurrentAction(action.id)
-        headerModePickerVisible = false
         await runAction(action, source: "header")
-        // Freeform routes through its own modal flow — don't try to wrap
-        // any leftover diff here, that's stale state from a previous run.
-        if action.id == EditAction.freeformID { return }
-        if !diffText.isEmpty {
-            candidateResults = [CandidateResult(action: action, output: outputText, diff: diffText, usage: cost.lastCost.usage, costUSD: cost.lastCost.costUSD)]
-            selectedCandidateIndex = 0
-            setCandidateOverlayVisible(true)
-        }
     }
 
     func nextCandidate() {
