@@ -93,4 +93,15 @@ final class ShortcutConflictTests: XCTestCase {
         state.toggleModePicker()
         XCTAssertFalse(state.headerModePickerVisible)
     }
+
+    func testModeShortcutMovesPickerHighlight() {
+        let state = makeState()
+        state.toggleModePicker()
+        let improveIndex = state.enabledActions.firstIndex(where: { $0.id == "improve" })
+        XCTAssertNotNil(improveIndex)
+        XCTAssertTrue(state.handleShortcut("cmd+2"))
+        XCTAssertEqual(state.settings.currentActionID, "improve")
+        XCTAssertEqual(state.headerModeIndex, improveIndex)
+        XCTAssertTrue(state.headerModePickerVisible)
+    }
 }

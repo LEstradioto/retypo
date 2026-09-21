@@ -149,6 +149,11 @@ final class AppState: ObservableObject {
     func setCurrentAction(_ actionID: String) {
         guard enabledActions.contains(where: { $0.id == actionID }) || actions.contains(where: { $0.id == actionID }) else { return }
         settings.currentActionID = actionID
+        // Keep the Cmd+D pill row honest: mode shortcuts change the mode
+        // too, and the picker must highlight whatever is current.
+        if let index = enabledActions.firstIndex(where: { $0.id == actionID }) {
+            headerModeIndex = index
+        }
         saveSettings()
     }
 
