@@ -119,6 +119,29 @@ final class AppStateBehaviorTests: XCTestCase {
         XCTAssertTrue(state.status.contains("Nothing staged"), state.status)
     }
 
+    /// Smart paste off means there is no dot and no paste shortcut — staging
+    /// would strand the text forever.
+    func testExternalImportWithSmartPasteOffWritesStraightIn() {
+        let (state, _) = makeState()
+        state.settings.smartPasteEnabled = false
+
+        state.receiveExternalImport("Straight in", source: "Safari")
+
+        XCTAssertEqual(state.inputText, "Straight in")
+        XCTAssertNil(state.stagedImport)
+    }
+
+    /// Regression: import reset the raw flag without asking the host to hide
+    /// the candidates window, leaving a stale panel on screen.
+    func testImportHidesCandidatesOverlayViaHost() {
+        let (state, host) = makeState()
+        state.setCandidateOverlayVisible(true)
+
+        state.importExternalText("Fresh words", source: "Safari")
+
+        XCTAssertEqual(host.candidatesVisibilityHistory, [true, false])
+    }
+
     /// Regression for the ESC-in-candidates fix: clearCandidateResults wipes
     /// state but does NOT ask the host to hide the panel.
     func testClearCandidateResultsDoesNotHideOverlay() {

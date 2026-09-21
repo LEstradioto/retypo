@@ -4,11 +4,17 @@ extension AppState {
     /// External text (global hotkey import, terminal prompt) is staged, not
     /// pasted: the header dot lights up and the smart-paste shortcut (or a
     /// click on the dot) writes it into the editor. A conscious decision,
-    /// never automatic. Undo (Cmd+Z) still restores after a paste.
+    /// never automatic. With smart paste disabled there is no paste path at
+    /// all, so imports go straight into the editor instead of stranding.
+    /// Undo (Cmd+Z) still restores after a paste.
     func receiveExternalImport(_ text: String, source: String) {
         let trimmedIncoming = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedIncoming.isEmpty, !text.hasPrefix("__RETYP_AIR_IMPORT_EMPTY_") else {
             status = "No selected text imported"
+            return
+        }
+        guard settings.smartPasteEnabled else {
+            importExternalText(text, source: source)
             return
         }
         stagedImport = StagedImport(text: text, source: source)
@@ -41,7 +47,7 @@ extension AppState {
         diffText = ""
         inlineHighlightRanges = []
         candidateResults = []
-        showCandidateOverlay = false
+        setCandidateOverlayVisible(false)
         selectedCandidateIndex = 0
         footerFocusIndex = nil
         wordsChangedLast = 0

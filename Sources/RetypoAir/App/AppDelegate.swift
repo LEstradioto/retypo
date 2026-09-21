@@ -210,7 +210,12 @@ extension AppDelegate {
 }
 
 extension AppDelegate: NSWindowDelegate {
-    func windowDidBecomeKey(_ notification: Notification) { focusEditorIfPossible() }
+    func windowDidBecomeKey(_ notification: Notification) {
+        // The picker claims first responder for arrow keys; becoming key
+        // again (Cmd+Tab back, dismissing a panel) must not steal it.
+        guard state?.headerModePickerVisible != true else { return }
+        focusEditorIfPossible()
+    }
     func windowDidMove(_ notification: Notification) { persistFrame(); auxiliaryPanels?.repositionCandidatesIfVisible() }
     func windowDidResize(_ notification: Notification) { persistFrame(); auxiliaryPanels?.repositionCandidatesIfVisible() }
     func windowDidEndLiveResize(_ notification: Notification) {
