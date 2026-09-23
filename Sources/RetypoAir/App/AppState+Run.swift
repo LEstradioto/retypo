@@ -176,8 +176,8 @@ extension AppState {
         LLMRequest(
             provider: settings.provider,
             model: model,
-            system: PromptTemplates.correctionSystem(instruction: action.instruction),
-            user: PromptTemplates.correctionUser(original),
+            system: PromptTemplates.correctionSystem(instruction: action.instruction, preamble: settings.systemPreamble),
+            user: PromptTemplates.userMessage(original),
             maxTokens: max(512, min(4_000, original.count * 2)),
             temperature: 0
         )
@@ -187,8 +187,8 @@ extension AppState {
         LLMRequest(
             provider: settings.provider,
             model: model,
-            system: PromptTemplates.actionSystem(instruction: instruction),
-            user: original,
+            system: PromptTemplates.actionSystem(instruction: instruction, preamble: settings.systemPreamble),
+            user: PromptTemplates.userMessage(original),
             maxTokens: max(800, min(5_000, original.count * 2)),
             temperature: 0.2
         )

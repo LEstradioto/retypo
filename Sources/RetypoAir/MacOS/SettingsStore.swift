@@ -114,6 +114,8 @@ struct RetypoSettings: Codable, Equatable {
     var smartPasteShortcut: String = "cmd+shift+v"
     var windowOpacity: Double = 1.0
     var fontColorHex: String? = nil
+    /// Empty means the built-in hardened preamble in PromptTemplates.
+    var systemPreamble: String = ""
 
     init() {}
 
@@ -127,7 +129,7 @@ struct RetypoSettings: Codable, Equatable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case provider, modelByProvider, autoCopy, alwaysOnTop, nativeSpellcheck, panelFrame, currentActionID, mainTheme, shortcutByAction, shortcutByModel, acceptedModelIDsByProvider, nextModelShortcut, previousModelShortcut, followActiveScreenOnShow, historyLimit, terminalPromptImportEnabled, experimentalVSCodeAccessibleViewImport, smartPasteEnabled, smartPasteShortcut, windowOpacity, fontColorHex
+        case provider, modelByProvider, autoCopy, alwaysOnTop, nativeSpellcheck, panelFrame, currentActionID, mainTheme, shortcutByAction, shortcutByModel, acceptedModelIDsByProvider, nextModelShortcut, previousModelShortcut, followActiveScreenOnShow, historyLimit, terminalPromptImportEnabled, experimentalVSCodeAccessibleViewImport, smartPasteEnabled, smartPasteShortcut, windowOpacity, fontColorHex, systemPreamble
     }
 
     init(from decoder: Decoder) throws {
@@ -146,6 +148,7 @@ struct RetypoSettings: Codable, Equatable {
         alwaysOnTop = try container.decodeIfPresent(Bool.self, forKey: .alwaysOnTop) ?? alwaysOnTop
         nativeSpellcheck = try container.decodeIfPresent(Bool.self, forKey: .nativeSpellcheck) ?? nativeSpellcheck
         panelFrame = try container.decodeIfPresent(PanelFrame.self, forKey: .panelFrame) ?? panelFrame
+        systemPreamble = try container.decodeIfPresent(String.self, forKey: .systemPreamble) ?? systemPreamble
     }
 
     private mutating func decodeAppearance(from container: KeyedDecodingContainer<CodingKeys>) throws {

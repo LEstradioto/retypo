@@ -21,6 +21,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
   automatically.
 - "Follow active display": the panel opens on the display holding the app you
   are working in, falling back to the mouse position.
+- Editable system prompt in Settings: replaces the built-in rewrite posture,
+  with one-click Reset. The mode instruction and output format stay appended.
 
 ### Changed
 - Settings slimmed to an opinionated minimum: editor layout picker, auto-run,
@@ -37,6 +39,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
   since there is no dot or shortcut to paste them with.
 
 ### Fixed
+- Question-shaped input is rewritten instead of answered: the system prompt
+  now frames text as content to edit (never a message to reply to), and the
+  payload is wrapped as "Text to edit:" on every request.
 - Auxiliary panels hide when Retypo loses focus.
 - The shortcut-capture error state clears when switching modes.
 - Imports reset the candidates overlay through the panel host, so a stale

@@ -29,6 +29,15 @@ extension AppState {
         saveSettings()
     }
 
+    /// Empty (or a paste of the built-in text) falls back to the hardened
+    /// default preamble in PromptTemplates.
+    func setSystemPreamble(_ text: String) {
+        settings.systemPreamble = text.trimmingCharacters(in: .whitespacesAndNewlines) == PromptTemplates.defaultPreamble
+            ? ""
+            : text
+        saveSettings()
+    }
+
     /// Main-panel translucency slider. Persists + applies live.
     func setWindowOpacity(_ opacity: Double) {
         settings.windowOpacity = min(1, max(0.5, opacity))

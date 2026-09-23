@@ -86,6 +86,34 @@ extension SettingsView {
         }
     }
 
+    var systemPromptSection: some View {
+        SettingsCard(title: "System prompt") {
+            TextEditor(text: systemPreambleBinding)
+                .font(.system(size: 10, design: .monospaced))
+                .frame(height: 96)
+                .settingsFocus("prompt.systemPreamble", radius: 8)
+            HStack(spacing: 8) {
+                Button("Reset") { state.setSystemPreamble("") }
+                    .buttonStyle(SettingsCapsuleButtonStyle(active: state.settings.systemPreamble.isEmpty))
+                    .help("Restore the built-in text-editing prompt")
+                Text(state.settings.systemPreamble.isEmpty ? "Built-in hardened prompt" : "Custom prompt")
+                    .font(.system(size: 10, design: .monospaced))
+                    .foregroundStyle(Palette.secondaryText)
+                Spacer()
+                Text("Mode instruction and output format are always appended")
+                    .font(.system(size: 10))
+                    .foregroundStyle(Palette.secondaryText)
+            }
+        }
+    }
+
+    private var systemPreambleBinding: Binding<String> {
+        Binding(
+            get: { PromptTemplates.resolvePreamble(state.settings.systemPreamble) },
+            set: { state.setSystemPreamble($0) }
+        )
+    }
+
     private func settingToggle(_ label: String, focusID: String, keyPath: WritableKeyPath<RetypoSettings, Bool>) -> some View {
         Toggle(label, isOn: settingBool(keyPath))
             .settingsFocus(focusID, radius: 8, keyboardFocusable: true, activate: {

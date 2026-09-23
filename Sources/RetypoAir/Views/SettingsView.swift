@@ -16,6 +16,7 @@ struct SettingsView: View {
                         VStack(spacing: 14) {
                             modelSection
                             editorSection
+                            systemPromptSection
                             terminalImportSection
                             accessSection
                             historySection
@@ -56,6 +57,7 @@ struct SettingsView: View {
             "editor.nativeSpellcheck",
             "editor.smartPaste",
             "editor.smartPasteShortcut",
+            "prompt.systemPreamble",
             "terminal.promptImport",
             "terminal.vscodeAccessibleView",
             "shortcuts.previousModel",
