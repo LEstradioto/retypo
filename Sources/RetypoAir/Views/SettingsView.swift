@@ -57,6 +57,7 @@ struct SettingsView: View {
             "editor.nativeSpellcheck",
             "editor.smartPaste",
             "editor.smartPasteShortcut",
+            "editor.liveTranslation",
             "prompt.systemPreamble",
             "terminal.promptImport",
             "terminal.vscodeAccessibleView",

@@ -23,6 +23,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
   are working in, falling back to the mouse position.
 - Editable system prompt in Settings: replaces the built-in rewrite posture,
   with one-click Reset. The mode instruction and output format stay appended.
+- Live translation (experimental, off by default): translates the input as
+  you type into a card below the editor — one target language at a time with
+  a quick switcher, debounced ~700ms, preview only (never touches the input).
+  Engine picker: Auto (Apple on-device where available, LLM fallback),
+  Apple, or your LLM model.
 
 ### Changed
 - Settings slimmed to an opinionated minimum: editor layout picker, auto-run,

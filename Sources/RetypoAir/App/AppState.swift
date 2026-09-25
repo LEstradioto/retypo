@@ -33,6 +33,13 @@ final class AppState: ObservableObject {
     /// Text captured from another app, waiting for a conscious paste via
     /// the smart-paste shortcut or the header dot. Never auto-fills.
     @Published var stagedImport: StagedImport?
+
+    /// Live translation preview (experimental). Never touches inputText.
+    @Published var liveTranslationText: String = ""
+    @Published var liveTranslationBusy: Bool = false
+    @Published var liveTranslationError: String?
+    var liveTranslationGeneration: Int = 0
+    var liveTranslationTask: Task<Void, Never>?
     @Published var canUndoEditorChange = false
     @Published var canRedoEditorChange = false
     /// Live instruction text for the Freeform mode. Populated only while

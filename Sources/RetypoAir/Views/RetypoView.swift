@@ -11,6 +11,11 @@ struct RetypoView: View {
                 editorBox(minHeight: 72)
                     .padding(.horizontal, 8)
                     .padding(.bottom, 2)
+                if state.settings.liveTranslationEnabled {
+                    TranslationCardView()
+                        .padding(.horizontal, 8)
+                        .padding(.bottom, 2)
+                }
                 footerStatus
             }
         }

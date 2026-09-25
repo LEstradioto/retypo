@@ -54,6 +54,7 @@ extension AppState {
         typingStartedAt = Date()
         draftPersistence.save(inputText)
         status = "Imported text from \(source)"
+        scheduleLiveTranslation()
     }
 
     func onInputChanged() {
@@ -63,6 +64,7 @@ extension AppState {
         draftPersistence.save(inputText)
         scheduleDraftSnapshot()
         inlineHighlightRanges = []
+        scheduleLiveTranslation()
         if suppressNextInputChange {
             suppressNextInputChange = false
         }

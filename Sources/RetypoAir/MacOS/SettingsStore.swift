@@ -116,6 +116,10 @@ struct RetypoSettings: Codable, Equatable {
     var fontColorHex: String? = nil
     /// Empty means the built-in hardened preamble in PromptTemplates.
     var systemPreamble: String = ""
+    /// Experimental: live translation card under the input box.
+    var liveTranslationEnabled: Bool = false
+    var liveTranslationTarget: String = "pt-BR"
+    var liveTranslationEngine: LiveTranslationEngine = .auto
 
     init() {}
 
@@ -129,7 +133,7 @@ struct RetypoSettings: Codable, Equatable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case provider, modelByProvider, autoCopy, alwaysOnTop, nativeSpellcheck, panelFrame, currentActionID, mainTheme, shortcutByAction, shortcutByModel, acceptedModelIDsByProvider, nextModelShortcut, previousModelShortcut, followActiveScreenOnShow, historyLimit, terminalPromptImportEnabled, experimentalVSCodeAccessibleViewImport, smartPasteEnabled, smartPasteShortcut, windowOpacity, fontColorHex, systemPreamble
+        case provider, modelByProvider, autoCopy, alwaysOnTop, nativeSpellcheck, panelFrame, currentActionID, mainTheme, shortcutByAction, shortcutByModel, acceptedModelIDsByProvider, nextModelShortcut, previousModelShortcut, followActiveScreenOnShow, historyLimit, terminalPromptImportEnabled, experimentalVSCodeAccessibleViewImport, smartPasteEnabled, smartPasteShortcut, windowOpacity, fontColorHex, systemPreamble, liveTranslationEnabled, liveTranslationTarget, liveTranslationEngine
     }
 
     init(from decoder: Decoder) throws {
@@ -175,6 +179,9 @@ struct RetypoSettings: Codable, Equatable {
         experimentalVSCodeAccessibleViewImport = try container.decodeIfPresent(Bool.self, forKey: .experimentalVSCodeAccessibleViewImport) ?? experimentalVSCodeAccessibleViewImport
         smartPasteEnabled = try container.decodeIfPresent(Bool.self, forKey: .smartPasteEnabled) ?? smartPasteEnabled
         smartPasteShortcut = try container.decodeIfPresent(String.self, forKey: .smartPasteShortcut) ?? smartPasteShortcut
+        liveTranslationEnabled = try container.decodeIfPresent(Bool.self, forKey: .liveTranslationEnabled) ?? liveTranslationEnabled
+        liveTranslationTarget = try container.decodeIfPresent(String.self, forKey: .liveTranslationTarget) ?? liveTranslationTarget
+        liveTranslationEngine = try container.decodeIfPresent(LiveTranslationEngine.self, forKey: .liveTranslationEngine) ?? liveTranslationEngine
     }
 }
 

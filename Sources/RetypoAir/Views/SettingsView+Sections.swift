@@ -83,7 +83,23 @@ extension SettingsView {
                 KeyCaptureField(text: state.settings.smartPasteShortcut, commit: { state.claimSmartPasteShortcut($0) })
                     .settingsFocus("editor.smartPasteShortcut", radius: 8)
             }
+            GridRow {
+                liveTranslationToggle
+                EmptyView()
+            }
         }
+    }
+
+    private var liveTranslationToggle: some View {
+        Toggle("Live translation (experimental)", isOn: Binding(
+            get: { state.settings.liveTranslationEnabled },
+            set: { _ in state.toggleLiveTranslation() }
+        ))
+        .settingsFocus("editor.liveTranslation", radius: 8, keyboardFocusable: true, activate: {
+            state.toggleLiveTranslation()
+            return true
+        })
+        .help("Translate the input live in a card below the editor")
     }
 
     var systemPromptSection: some View {
