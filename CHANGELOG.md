@@ -44,6 +44,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
   since there is no dot or shortcut to paste them with.
 
 ### Fixed
+- Live translation now shows the text as it stands *after* a mode is
+  applied: it holds back while a run is in flight and re-translates the
+  resulting editor text instead of the pre-mode draft.
+- Live translation: the Apple engine no longer spins forever when the system
+  session stalls — jobs resolve exactly once (session, timeout, or cleanup)
+  and Auto falls back to the LLM.
 - Question-shaped input is rewritten instead of answered: the system prompt
   now frames text as content to edit (never a message to reply to), and the
   payload is wrapped as "Text to edit:" on every request.

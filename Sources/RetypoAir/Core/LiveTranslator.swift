@@ -29,10 +29,12 @@ enum LiveTranslationEngine: String, Codable, CaseIterable {
 
 enum LiveTranslationError: Error, LocalizedError, Equatable {
     case noModel
+    case appleTimedOut
 
     var errorDescription: String? {
         switch self {
         case .noModel: return "Choose a model before live translation"
+        case .appleTimedOut: return "Apple Translation stalled; try the LLM engine"
         }
     }
 }

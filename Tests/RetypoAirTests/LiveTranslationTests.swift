@@ -137,4 +137,41 @@ final class LiveTranslationTests: XCTestCase {
         XCTAssertEqual(decoded.liveTranslationTarget, "pt-BR")
         XCTAssertEqual(decoded.liveTranslationEngine, .auto)
     }
+
+    /// Regression: mode results land in the editor without re-orienting the
+    /// card, so it kept showing the pre-mode translation.
+    func testEditorWriteSchedulesTranslation() {
+        let state = makeState()
+        state.settings.liveTranslationEnabled = true
+
+        state.inputText = "Applied mode result"
+
+        XCTAssertNotNil(state.liveTranslationTask)
+    }
+
+    /// The card translates the text as it stands after a mode is applied —
+    /// never a draft the run is about to replace.
+    func testTranslationHoldsBackDuringModeRun() {
+        let state = makeState()
+        state.settings.liveTranslationEnabled = true
+        state.llm.isCorrecting = true
+
+        state.inputText = "About to be replaced"
+        state.scheduleLiveTranslation()
+
+        XCTAssertNil(state.liveTranslationTask)
+    }
+
+    func testFinishRunSchedulesAppliedText() {
+        let state = makeState()
+        state.settings.liveTranslationEnabled = true
+        state.llm.isCorrecting = true
+        state.inputText = "Applied"
+        XCTAssertNil(state.liveTranslationTask)
+
+        state.llm.isCorrecting = false
+        state.scheduleLiveTranslation()
+
+        XCTAssertNotNil(state.liveTranslationTask)
+    }
 }

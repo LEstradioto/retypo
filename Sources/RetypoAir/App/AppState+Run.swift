@@ -36,7 +36,15 @@ extension AppState {
             guard context.generation == llm.generation else { return }
             report(error, while: "Correct")
         }
+        finishEditingRun()
+    }
+
+    /// A run finished (applied or failed). Clearing the flag first matters:
+    /// the mode result landed in the editor while translation was holding
+    /// back, so the card must now catch up to the applied text.
+    private func finishEditingRun() {
         llm.isCorrecting = false
+        scheduleLiveTranslation()
     }
 
     func runAction(_ action: EditAction, source: String = "manual") async {
@@ -72,7 +80,7 @@ extension AppState {
             guard context.generation == llm.generation else { return }
             report(error, while: action.title)
         }
-        llm.isCorrecting = false
+        finishEditingRun()
     }
 
     func confirmFreeformPrompt() {

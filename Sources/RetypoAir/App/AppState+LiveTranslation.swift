@@ -1,17 +1,19 @@
 import Foundation
 
 extension AppState {
-    /// Debounced live translation of the input text. Typing cancels the
+    /// Debounced live translation of the editor text. Typing cancels the
     /// pending run; stale responses are dropped via the generation counter.
+    /// While a mode run is in flight the editor is about to be replaced —
+    /// translation waits for the applied result instead of racing it.
     func scheduleLiveTranslation() {
-        guard settings.liveTranslationEnabled else { return }
+        guard settings.liveTranslationEnabled, !llm.isCorrecting else { return }
         liveTranslationGeneration += 1
         let generation = liveTranslationGeneration
         let text = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         liveTranslationTask?.cancel()
         liveTranslationTask = Task { [weak self] in
             try? await Task.sleep(nanoseconds: 700_000_000)
-            guard let self, generation == self.liveTranslationGeneration else { return }
+            guard let self, generation == self.liveTranslationGeneration, !self.llm.isCorrecting else { return }
             await self.runLiveTranslation(text, generation: generation, using: self.liveTranslator())
         }
     }

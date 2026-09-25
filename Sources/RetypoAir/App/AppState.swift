@@ -7,7 +7,11 @@ final class AppState: ObservableObject {
     let footerFocusItemCount = 5
 
     @Published var settings: RetypoSettings
-    @Published var inputText: String = ""
+    @Published var inputText: String = "" {
+        // Any editor write (typing, mode result, restore, import) re-orients
+        // the live-translation card to the text that is now in the editor.
+        didSet { scheduleLiveTranslation() }
+    }
     @Published var correctedText: String = ""
     @Published var outputText: String = ""
     @Published var status: String = "Ready"
