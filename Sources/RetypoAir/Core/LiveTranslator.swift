@@ -30,11 +30,17 @@ enum LiveTranslationEngine: String, Codable, CaseIterable {
 enum LiveTranslationError: Error, LocalizedError, Equatable {
     case noModel
     case appleTimedOut
+    case appleCannotIdentifySource
+    case applePackNotInstalled
+    case appleUnsupportedPair
 
     var errorDescription: String? {
         switch self {
         case .noModel: return "Choose a model before live translation"
         case .appleTimedOut: return "Apple Translation stalled; try the LLM engine"
+        case .appleCannotIdentifySource: return "Apple Translation: couldn't identify the text's language"
+        case .applePackNotInstalled: return "Apple language pack not downloaded — use the LLM engine, or translate once in Safari/Notes to download it"
+        case .appleUnsupportedPair: return "Apple Translation doesn't support this language pair — use the LLM engine"
         }
     }
 }

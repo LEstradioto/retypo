@@ -49,7 +49,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
   resulting editor text instead of the pre-mode draft.
 - Live translation: the Apple engine no longer spins forever when the system
   session stalls — jobs resolve exactly once (session, timeout, or cleanup)
-  and Auto falls back to the LLM.
+  and Auto falls back to the LLM. The session gets an explicit language pair
+  (source detected via NaturalLanguage), and a missing language pack now
+  fails fast with an actionable message instead of blocking on a download UI.
 - Question-shaped input is rewritten instead of answered: the system prompt
   now frames text as content to edit (never a message to reply to), and the
   payload is wrapped as "Text to edit:" on every request.

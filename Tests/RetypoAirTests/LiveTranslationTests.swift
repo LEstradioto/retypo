@@ -174,4 +174,23 @@ final class LiveTranslationTests: XCTestCase {
 
         XCTAssertNotNil(state.liveTranslationTask)
     }
+
+    /// pt and pt-BR are one language — the Apple engine treats that as a
+    /// no-op instead of requesting an unsupported pair.
+    func testSameBaseLanguageMatching() {
+        let portuguese = TargetLanguage.named("pt-BR")
+        XCTAssertTrue(portuguese.isSameBaseLanguage(as: "pt"))
+        XCTAssertTrue(portuguese.isSameBaseLanguage(as: "pt-PT"))
+        XCTAssertFalse(portuguese.isSameBaseLanguage(as: "en"))
+        XCTAssertTrue(TargetLanguage.named("en").isSameBaseLanguage(as: "en-US"))
+        XCTAssertTrue(TargetLanguage.named("zh-Hans").isSameBaseLanguage(as: "zh"))
+    }
+
+    /// Source detection is NaturalLanguage's job — the Translation framework's
+    /// identification path threw unableToIdentifyLanguage for nil sources.
+    func testAppleSourceDetectionUsesNaturalLanguage() throws {
+        guard #available(macOS 15.0, *) else { throw XCTSkip("Apple engine is macOS 15+") }
+        XCTAssertEqual(AppleTranslationEngine.detectedLanguageCode(of: "Hello, how are you?"), "en")
+        XCTAssertEqual(AppleTranslationEngine.detectedLanguageCode(of: "Olá, tudo bem?"), "pt")
+    }
 }

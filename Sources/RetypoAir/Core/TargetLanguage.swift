@@ -24,4 +24,15 @@ struct TargetLanguage: Identifiable, Hashable {
     static func named(_ code: String) -> TargetLanguage {
         supported.first { $0.code == code } ?? supported[0]
     }
+
+    /// Base-language comparison for translation purposes: pt and pt-BR are
+    /// the same language, so translating between them is a no-op.
+    func isSameBaseLanguage(as otherCode: String) -> Bool {
+        Self.baseCode(code) == Self.baseCode(otherCode)
+    }
+
+    private static func baseCode(_ code: String) -> String {
+        let base = code.split(whereSeparator: { $0 == "-" || $0 == "_" }).first
+        return (base.map(String.init) ?? code).lowercased()
+    }
 }
