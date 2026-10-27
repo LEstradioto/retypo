@@ -22,6 +22,12 @@ extension AppState {
         saveModes()
     }
 
+    func setModePromptHeight(_ height: CGFloat) {
+        let range = RetypoSettings.modePromptHeightRange
+        settings.modePromptHeight = Double(min(max(height, range.lowerBound), range.upperBound))
+        saveSettings()
+    }
+
     // periphery:ignore
     func toggleModeEnabled(_ actionID: String) {
         guard let index = actions.firstIndex(where: { $0.id == actionID }) else { return }

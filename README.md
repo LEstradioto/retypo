@@ -85,7 +85,7 @@ A mode is a saved system prompt. **Freeform** is special: type the prompt live e
 
 Built-in: Correct, Typos & Grammar, Improve Writing, Translate, Simplify, Summarize, Bullets, Better way of saying, Make this Tweet Fit, Generate 3 variations, How to respond 3 ways, Caveman, **Freeform**.
 
-Press `Cmd+D`, then click the pencil on a mode card to rename it or edit its prompt in place. Changes save automatically; built-in modes also offer **Reset default**. Edit, disable, and shortcut-bind modes in Settings. Stored in `~/.retypo/modes.json`.
+Press `Cmd+D`, then click the pencil on a mode card to rename it or edit its prompt in place. Drag the corner grip of the prompt box to resize it; the standard editing shortcuts work there and in every other field. Changes save automatically; built-in modes also offer **Reset default**. Edit, disable, and shortcut-bind modes in Settings. Stored in `~/.retypo/modes.json`.
 
 ## External import precedence
 

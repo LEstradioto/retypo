@@ -28,6 +28,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
   a quick switcher, debounced ~700ms, preview only (never touches the input).
   Engine picker: Auto (Apple on-device where available, LLM fallback),
   Apple, or your LLM model.
+- Standard editing shortcuts (`Cmd+C/V/X/A/Z`, `Shift+Cmd+Z`) in every text
+  field: the mode prompt editor, mode names, Settings and the Freeform prompt.
+  The app now has a real Edit menu; only the main editor handled them before.
+- The mode prompt box in `Cmd+D` resizes like a textarea: drag the corner grip.
+  The height is remembered, and the panel grows (upward when docked low) once
+  the editor below reaches its minimum.
 
 ### Changed
 - Renamed Retypo Air to Retypo: app, Swift package, bundle id

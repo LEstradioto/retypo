@@ -82,6 +82,19 @@ final class KeyHandlingTextView: NSTextView {
         }
     }
 
+    /// The Edit menu sends `undo:` / `redo:` before `keyDown` sees Cmd+Z, and
+    /// `NSTextView` does not implement them (the window would). Taking them
+    /// here keeps the fallback to the app-level history of mode results.
+    @objc func undo(_ sender: Any?) { performUndoRedo(redo: false) }
+    @objc func redo(_ sender: Any?) { performUndoRedo(redo: true) }
+
+    /// Always enabled: an empty text undo stack may still have app history.
+    override func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+        let action = menuItem.action
+        if action == ApplicationMenu.undoAction || action == ApplicationMenu.redoAction { return true }
+        return super.validateMenuItem(menuItem)
+    }
+
     private func isQuit(_ event: NSEvent) -> Bool {
         event.keyCode == 12 && event.modifierFlags.contains(.command) // Q
     }

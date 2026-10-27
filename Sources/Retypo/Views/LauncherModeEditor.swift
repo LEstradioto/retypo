@@ -3,6 +3,9 @@ import SwiftUI
 struct LauncherModeEditor: View {
     @EnvironmentObject private var state: AppState
     @FocusState private var promptIsFocused: Bool
+    /// Live height while the grip is dragged. Committed to settings on
+    /// release, so the whole panel does not re-render on every pixel.
+    @State private var draggedPromptHeight: CGFloat?
 
     let action: EditAction
     let finishEditing: () -> Void
@@ -12,18 +15,37 @@ struct LauncherModeEditor: View {
             TextField("Mode name", text: titleBinding)
                 .textFieldStyle(.roundedBorder)
                 .font(.system(size: 12, weight: .semibold, design: .rounded))
-            TextEditor(text: instructionBinding)
-                .font(.system(size: 11, weight: .regular, design: .monospaced))
-                .focused($promptIsFocused)
-                .scrollContentBackground(.hidden)
-                .padding(5)
-                .background(RoundedRectangle(cornerRadius: 9).fill(Palette.editor))
-                .overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(Palette.hairline, lineWidth: 1))
+            promptEditor
             editorFooter
         }
         .onAppear {
             DispatchQueue.main.async { promptIsFocused = true }
         }
+    }
+
+    private var promptEditor: some View {
+        TextEditor(text: instructionBinding)
+            .font(.system(size: 11, weight: .regular, design: .monospaced))
+            .focused($promptIsFocused)
+            .scrollContentBackground(.hidden)
+            .padding(5)
+            .frame(height: promptHeight)
+            .background(RoundedRectangle(cornerRadius: 9).fill(Palette.editor))
+            .overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(Palette.hairline, lineWidth: 1))
+            .overlay(alignment: .bottomTrailing) {
+                TextareaResizeGrip(height: promptHeightBinding, range: RetypoSettings.modePromptHeightRange) { height in
+                    state.setModePromptHeight(height)
+                    draggedPromptHeight = nil
+                }
+            }
+    }
+
+    private var promptHeight: CGFloat {
+        draggedPromptHeight ?? CGFloat(state.settings.modePromptHeight)
+    }
+
+    private var promptHeightBinding: Binding<CGFloat> {
+        Binding(get: { promptHeight }, set: { draggedPromptHeight = $0 })
     }
 
     private var editorFooter: some View {

@@ -1,29 +1,6 @@
 import Foundation
 import AppKit
 
-struct PanelFrame: Codable, Equatable {
-    var x: Double
-    var y: Double
-    var width: Double
-    var height: Double
-
-    var nsRect: NSRect { NSRect(x: x, y: y, width: width, height: height) }
-
-    init(x: Double = 420, y: Double = 260, width: Double = 760, height: Double = 500) {
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
-    }
-
-    init(_ rect: NSRect) {
-        self.x = rect.origin.x
-        self.y = rect.origin.y
-        self.width = rect.size.width
-        self.height = rect.size.height
-    }
-}
-
 enum MainTheme: String, CaseIterable, Identifiable, Codable {
     case glass
     case dark
@@ -120,6 +97,10 @@ struct RetypoSettings: Codable, Equatable {
     var liveTranslationEnabled: Bool = false
     var liveTranslationTarget: String = "pt-BR"
     var liveTranslationEngine: LiveTranslationEngine = .auto
+    /// Height of the mode prompt editor in the Cmd+D picker, set by dragging
+    /// its resize grip.
+    var modePromptHeight: Double = 140
+    static let modePromptHeightRange: ClosedRange<CGFloat> = 64...640
 
     init() {}
 
@@ -133,7 +114,7 @@ struct RetypoSettings: Codable, Equatable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case provider, modelByProvider, autoCopy, alwaysOnTop, nativeSpellcheck, panelFrame, currentActionID, mainTheme, shortcutByAction, shortcutByModel, acceptedModelIDsByProvider, nextModelShortcut, previousModelShortcut, followActiveScreenOnShow, historyLimit, terminalPromptImportEnabled, experimentalVSCodeAccessibleViewImport, smartPasteEnabled, smartPasteShortcut, windowOpacity, fontColorHex, systemPreamble, liveTranslationEnabled, liveTranslationTarget, liveTranslationEngine
+        case provider, modelByProvider, autoCopy, alwaysOnTop, nativeSpellcheck, panelFrame, currentActionID, mainTheme, shortcutByAction, shortcutByModel, acceptedModelIDsByProvider, nextModelShortcut, previousModelShortcut, followActiveScreenOnShow, historyLimit, terminalPromptImportEnabled, experimentalVSCodeAccessibleViewImport, smartPasteEnabled, smartPasteShortcut, windowOpacity, fontColorHex, systemPreamble, liveTranslationEnabled, liveTranslationTarget, liveTranslationEngine, modePromptHeight
     }
 
     init(from decoder: Decoder) throws {
@@ -153,6 +134,7 @@ struct RetypoSettings: Codable, Equatable {
         nativeSpellcheck = try container.decodeIfPresent(Bool.self, forKey: .nativeSpellcheck) ?? nativeSpellcheck
         panelFrame = try container.decodeIfPresent(PanelFrame.self, forKey: .panelFrame) ?? panelFrame
         systemPreamble = try container.decodeIfPresent(String.self, forKey: .systemPreamble) ?? systemPreamble
+        modePromptHeight = try container.decodeIfPresent(Double.self, forKey: .modePromptHeight) ?? modePromptHeight
     }
 
     private mutating func decodeAppearance(from container: KeyedDecodingContainer<CodingKeys>) throws {

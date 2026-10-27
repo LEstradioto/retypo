@@ -167,18 +167,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func configureApplicationMenu() {
-        let mainMenu = NSMenu()
-        let appMenuItem = NSMenuItem()
-        mainMenu.addItem(appMenuItem)
-
-        let appMenu = NSMenu(title: "Retypo")
         let quitItem = NSMenuItem(title: "Quit Retypo", action: #selector(quitApp), keyEquivalent: "q")
         quitItem.keyEquivalentModifierMask = [.command]
         quitItem.target = self
-        appMenu.addItem(quitItem)
-        appMenuItem.submenu = appMenu
-
-        NSApp.mainMenu = mainMenu
+        NSApp.mainMenu = ApplicationMenu.make(quit: quitItem)
     }
 }
 
@@ -217,7 +209,11 @@ extension AppDelegate: NSWindowDelegate {
         focusEditorIfPossible()
     }
     func windowDidMove(_ notification: Notification) { persistFrame(); auxiliaryPanels?.repositionCandidatesIfVisible() }
-    func windowDidResize(_ notification: Notification) { persistFrame(); auxiliaryPanels?.repositionCandidatesIfVisible() }
+    func windowDidResize(_ notification: Notification) {
+        keepPanelOnScreenAfterContentGrowth()
+        persistFrame()
+        auxiliaryPanels?.repositionCandidatesIfVisible()
+    }
     func windowDidEndLiveResize(_ notification: Notification) {
         persistFrame()
         state?.flushPendingPanelFrame()
@@ -225,6 +221,14 @@ extension AppDelegate: NSWindowDelegate {
     func windowWillClose(_ notification: Notification) {
         persistFrame()
         state?.flushPendingPanelFrame()
+    }
+
+    /// Only for resizes the content caused; a live resize is the user's own
+    /// drag and is left alone.
+    private func keepPanelOnScreenAfterContentGrowth() {
+        guard let panel, !panel.inLiveResize, let visible = panel.screen?.visibleFrame,
+              let frame = PanelPlacement.onScreen(panel.frame, visible: visible) else { return }
+        panel.setFrameOrigin(frame.origin)
     }
 
     private func persistFrame() {
