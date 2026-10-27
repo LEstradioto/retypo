@@ -13,14 +13,20 @@ enum EnhancedRoute: Equatable {
 
     static func pick(provider: ProviderKind, plan: ReferencePlan, webSearch: Bool) -> EnhancedRoute {
         guard plan.needsTools || webSearch else { return .singleRequest }
+        if provider == .codex, webSearch { return .unavailable(codexWebSearchReason) }
         if provider.usesLocalCLI { return .cliTools }
         if provider == .anthropic { return .anthropicTools }
         return .unavailable(unavailableReason(provider, webSearch: webSearch))
     }
 
+    /// Codex's read-only sandbox reads any file the user can; live search
+    /// would hand a planted instruction a way to send one out.
+    static let codexWebSearchReason = "Web search is off on Codex: its sandbox can read any of your files, and search would give a planted instruction a way out. Use Anthropic or Claude Code"
+
     private static func unavailableReason(_ provider: ProviderKind, webSearch: Bool) -> String {
         let need = webSearch ? "Web search" : "Sources over \(ReferencePlanner.inlineCharacterBudget / 1_000)k characters"
-        return "\(need) needs Anthropic, Claude Code or Codex; \(provider.displayName) only takes small sources sent whole"
+        let providers = webSearch ? "Anthropic or Claude Code" : "Anthropic, Claude Code or Codex"
+        return "\(need) needs \(providers); \(provider.displayName) only takes small sources sent whole"
     }
 }
 

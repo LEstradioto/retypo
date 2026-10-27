@@ -30,11 +30,19 @@ struct CLIResearchWorkspace {
         if let url { try? FileManager.default.removeItem(at: url) }
     }
 
+    /// An attachment deleted since it was attached is skipped, as the
+    /// Anthropic route skips it; any other failure removes the partial copy.
     private static func copy(_ files: [ReferenceRoot]) throws -> URL {
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent("retypo-research-\(UUID().uuidString)", isDirectory: true)
-        try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
-        for file in files {
-            try FileManager.default.copyItem(at: file.url, to: url.appendingPathComponent(file.label))
+        let fileManager = FileManager.default
+        let url = fileManager.temporaryDirectory.appendingPathComponent("retypo-research-\(UUID().uuidString)", isDirectory: true)
+        try fileManager.createDirectory(at: url, withIntermediateDirectories: true)
+        do {
+            for file in files where fileManager.fileExists(atPath: file.url.path) {
+                try fileManager.copyItem(at: file.url, to: url.appendingPathComponent(file.label))
+            }
+        } catch {
+            try? fileManager.removeItem(at: url)
+            throw error
         }
         return url
     }

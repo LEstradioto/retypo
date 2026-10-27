@@ -31,12 +31,11 @@ final class CodexProvider: LLMProviderClient {
 
     /// The user's config.toml may sit at xhigh effort; a rewrite does not
     /// need it, and low cuts several seconds off every run. Research (an
-    /// enhanced mode) gets medium to plan its searches. Codex's read-only
-    /// sandbox reads any file the user can, so only web search is switched
-    /// on here; it cannot be narrowed to the attached sources.
+    /// enhanced mode) gets medium to plan its searches. Web search is never
+    /// switched on: the read-only sandbox reads any file the user can, and
+    /// search would be the way out for what it read (see `EnhancedRoute`).
     static func configOverrides(for research: CLIResearchAccess?) -> [String] {
-        let effort = ["-c", "model_reasoning_effort=\"\(research == nil ? "low" : "medium")\""]
-        return research?.webSearch == true ? effort + ["-c", "web_search=\"live\""] : effort
+        ["-c", "model_reasoning_effort=\"\(research == nil ? "low" : "medium")\""]
     }
 
     func arguments(for request: LLMRequest, messageFile: URL) -> [String] {

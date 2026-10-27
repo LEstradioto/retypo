@@ -117,12 +117,22 @@ final class ReferenceToolboxTests: XCTestCase {
         XCTAssertTrue(call("read_file", ["path": "docs/guia.txt", "start_line": Int.max, "end_line": Int.max]).content.contains("past the end"))
     }
 
+    /// A Word paragraph is one long line. The fact at its end must still be
+    /// findable and readable: long lines become consecutive numbered lines.
+    func testFactsDeepInALongLineCanBeFoundAndRead() throws {
+        try fixture.write("docs/policy.md", String(repeating: "texto ", count: 500) + "THE DEADLINE IS 9 DAYS.")
+        let hit = call("search_files", ["query": "deadline"]).content
+        XCTAssertTrue(hit.contains("docs/policy.md:2: …"), hit)
+        XCTAssertTrue(hit.contains("THE DEADLINE IS 9 DAYS."))
+        XCTAssertTrue(call("read_file", ["path": "docs/policy.md", "start_line": 2]).content.contains("THE DEADLINE IS 9 DAYS."))
+    }
+
     /// A minified one-line file must not flood the next request.
-    func testOneHugeLineIsCut() throws {
+    func testOneHugeLineStaysWithinTheReadCap() throws {
         try fixture.write("docs/data.json", String(repeating: "x", count: 500_000))
         let outcome = call("read_file", ["path": "docs/data.json"])
-        XCTAssertLessThan(outcome.content.count, ReferenceToolbox.readCharacterLimit)
-        XCTAssertTrue(outcome.content.contains("more characters]"))
+        XCTAssertLessThan(outcome.content.count, ReferenceToolbox.readCharacterLimit + 200)
+        XCTAssertTrue(outcome.content.contains("More below: call read_file with start_line"))
     }
 
     /// Hidden files and dependency folders stay out of reach even by exact path.
@@ -134,10 +144,15 @@ final class ReferenceToolboxTests: XCTestCase {
         XCTAssertTrue(call("search_files", ["query": "reembolso", "path": "docs/node_modules"]).isError)
     }
 
-    /// Attaching a hidden file by name is a deliberate choice; it stays readable.
+    /// Attaching a hidden file by name is a deliberate choice; it stays
+    /// readable, whichever was attached first, the file or its folder.
     func testAHiddenFileAttachedByNameIsReadable() {
-        let toolbox = ReferenceToolbox(roots: fixture.roots(["docs/.hidden.md"]))
-        XCTAssertFalse(toolbox.run(ToolCall(id: "1", name: "read_file", arguments: ["path": ".hidden.md"])).isError)
+        for order in [["docs/.hidden.md"], ["docs", "docs/.hidden.md"], ["docs/.hidden.md", "docs"]] {
+            let toolbox = ReferenceToolbox(roots: fixture.roots(order))
+            XCTAssertFalse(toolbox.run(ToolCall(id: "1", name: "read_file", arguments: ["path": ".hidden.md"])).isError, "\(order)")
+            let absolute = toolbox.run(ToolCall(id: "2", name: "read_file", arguments: ["path": fixture.url("docs/.hidden.md").path]))
+            XCTAssertFalse(absolute.isError, "\(order)")
+        }
     }
 
     func testAFolderSymlinkIsAttachedAsAFolder() throws {

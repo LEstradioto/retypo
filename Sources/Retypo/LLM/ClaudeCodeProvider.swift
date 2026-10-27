@@ -37,11 +37,12 @@ final class ClaudeCodeProvider: LLMProviderClient {
             // Ignore user/project settings: this is a text transform, not a
             // coding session, and hooks or MCP servers would only add latency.
             "--setting-sources", "",
+            // Each run would otherwise leave a transcript (the user's text and
+            // every file it read) under ~/.claude/projects.
+            "--no-session-persistence",
             "--disallowed-tools", ClaudeCodeTools.disallowed(for: request.research)
         ]
-        if let research = request.research {
-            arguments += ClaudeCodeTools.researchArguments(research)
-        }
+        arguments += request.research.map(ClaudeCodeTools.researchArguments) ?? []
         if let model = CLIModelCatalog.explicitModel(request.model) {
             arguments += ["--model", model]
         }

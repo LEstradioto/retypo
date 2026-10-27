@@ -22,11 +22,16 @@ struct EnhancementPreview: Equatable {
     init(plan: ReferencePlan, webSearch: Bool, provider: ProviderKind) {
         let parts = [Self.sourcesSummary(plan), webSearch ? "web search on" : nil].compactMap { $0 }
         summary = parts.isEmpty ? "Attach files or a folder, or turn on web search" : parts.joined(separator: " · ")
+        warning = Self.warning(plan: plan, webSearch: webSearch, provider: provider)
+    }
+
+    static let codexReadCaution = "Codex reads with its read-only sandbox, which reaches any of your files, not only these"
+
+    private static func warning(plan: ReferencePlan, webSearch: Bool, provider: ProviderKind) -> String? {
         if case .unavailable(let reason) = EnhancedRoute.pick(provider: provider, plan: plan, webSearch: webSearch) {
-            warning = reason
-        } else {
-            warning = nil
+            return reason
         }
+        return provider == .codex && plan.needsTools ? codexReadCaution : nil
     }
 
     private static func sourcesSummary(_ plan: ReferencePlan) -> String? {

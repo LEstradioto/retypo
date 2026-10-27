@@ -12,6 +12,9 @@ enum LegacyDataMigration {
         /// `~/.retypo-air` was the user's own symlink (a dotfiles or sync
         /// folder); `~/.retypo` now points to the same place.
         case linked
+        /// Both stay: `~/.retypo` is in use and the old directory still holds
+        /// files it also has, or is the user's own link. Logged at every launch.
+        case keptBoth
         case alreadyMigrated
         case nothingToMigrate
     }
@@ -39,15 +42,16 @@ enum LegacyDataMigration {
             try fileManager.createSymbolicLink(at: legacy, withDestinationURL: current)
             return .moved
         }
-        return try merge(legacy, into: current, fileManager) > 0 ? .merged : .alreadyMigrated
+        try merge(legacy, into: current, fileManager)
+        return isRealDirectory(legacy, fileManager) ? .keptBoth : .merged
     }
 
     /// The link this migration leaves behind, or the user's own link: then
     /// `~/.retypo` points to the same folder, which stays where it is.
     private static func adopt(_ target: URL, as current: URL, _ fileManager: FileManager) throws -> Outcome {
-        guard target.path != current.standardizedFileURL.path, !fileManager.fileExists(atPath: current.path) else {
-            return .alreadyMigrated
-        }
+        let samePlace = current.resolvingSymlinksInPath().path == target.resolvingSymlinksInPath().path
+        guard target.path != current.standardizedFileURL.path, !samePlace else { return .alreadyMigrated }
+        guard !fileManager.fileExists(atPath: current.path) else { return .keptBoth }
         try fileManager.createSymbolicLink(at: current, withDestinationURL: target)
         return .linked
     }
@@ -57,21 +61,24 @@ enum LegacyDataMigration {
     /// `~/.retypo` never served the app (no settings.json) and the old one
     /// did, the old copies win and the newer ones go to `pre-migration/`;
     /// otherwise the newer copies stay and the old ones are left in place.
-    private static func merge(_ legacy: URL, into current: URL, _ fileManager: FileManager) throws -> Int {
+    ///
+    /// settings.json moves last: if a move fails halfway, the retry still
+    /// sees it on the old side and picks the same winner.
+    private static func merge(_ legacy: URL, into current: URL, _ fileManager: FileManager) throws {
         let legacyWins = !hasSettings(current, fileManager) && hasSettings(legacy, fileManager)
-        var moved = 0
-        for name in try fileManager.contentsOfDirectory(atPath: legacy.path) {
+        let names = try fileManager.contentsOfDirectory(atPath: legacy.path)
+        for name in names.filter({ $0 != settingsFile }) + names.filter({ $0 == settingsFile }) {
             let target = current.appendingPathComponent(name)
             if fileManager.fileExists(atPath: target.path) {
                 guard legacyWins else { continue }
                 try setAside(target, in: current, fileManager)
             }
             try fileManager.moveItem(at: legacy.appendingPathComponent(name), to: target)
-            moved += 1
         }
         try retireIfEmpty(legacy, pointingTo: current, fileManager)
-        return moved
     }
+
+    private static let settingsFile = "settings.json"
 
     private static func setAside(_ item: URL, in current: URL, _ fileManager: FileManager) throws {
         let backup = current.appendingPathComponent("pre-migration", isDirectory: true)
@@ -86,7 +93,7 @@ enum LegacyDataMigration {
     }
 
     private static func hasSettings(_ directory: URL, _ fileManager: FileManager) -> Bool {
-        fileManager.fileExists(atPath: directory.appendingPathComponent("settings.json").path)
+        fileManager.fileExists(atPath: directory.appendingPathComponent(settingsFile).path)
     }
 
     private static func symlinkTarget(of url: URL, _ fileManager: FileManager) -> URL? {

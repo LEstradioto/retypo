@@ -19,15 +19,22 @@ final class EnhancedRunTests: XCTestCase {
     func testLargeSourcesOrWebSearchNeedATooledProvider() {
         XCTAssertEqual(EnhancedRoute.pick(provider: .anthropic, plan: onDemand, webSearch: false), .anthropicTools)
         XCTAssertEqual(EnhancedRoute.pick(provider: .anthropic, plan: .none, webSearch: true), .anthropicTools)
-        XCTAssertEqual(EnhancedRoute.pick(provider: .claudeCode, plan: onDemand, webSearch: false), .cliTools)
-        XCTAssertEqual(EnhancedRoute.pick(provider: .codex, plan: inline, webSearch: true), .cliTools)
+        XCTAssertEqual(EnhancedRoute.pick(provider: .claudeCode, plan: onDemand, webSearch: true), .cliTools)
+        XCTAssertEqual(EnhancedRoute.pick(provider: .codex, plan: onDemand, webSearch: false), .cliTools)
+    }
+
+    /// Codex's sandbox reads any file; with live search a planted instruction
+    /// would have a way out, so search is not offered there.
+    func testCodexNeverSearchesTheWeb() {
+        XCTAssertEqual(EnhancedRoute.pick(provider: .codex, plan: inline, webSearch: true), .unavailable(EnhancedRoute.codexWebSearchReason))
+        XCTAssertEqual(EnhancedPreviewFixtures.warning(.codex, plan: onDemand), EnhancementPreview.codexReadCaution)
     }
 
     func testOtherProvidersExplainWhatIsMissing() {
         guard case .unavailable(let reason) = EnhancedRoute.pick(provider: .groq, plan: inline, webSearch: true) else {
             return XCTFail("Groq has no web search here")
         }
-        XCTAssertTrue(reason.hasPrefix("Web search needs Anthropic, Claude Code or Codex"))
+        XCTAssertTrue(reason.hasPrefix("Web search needs Anthropic or Claude Code"))
         XCTAssertTrue(reason.contains("Groq"))
     }
 
@@ -116,13 +123,32 @@ final class EnhancedRunTests: XCTestCase {
         XCTAssertFalse(arguments.contains("--allowed-tools"))
     }
 
-    func testCodexResearchTurnsOnLiveSearchAndMoreEffort() {
+    func testCodexResearchGetsMoreEffortButNeverWebSearch() {
         let file = URL(fileURLWithPath: "/tmp/out.txt")
-        let research = CLIResearchAccess(folders: [], webSearch: true)
+        let research = CLIResearchAccess(folders: ["/Users/me/docs"], webSearch: true)
         let arguments = CodexProvider().arguments(for: cliRequest(.codex, research: research), messageFile: file)
         XCTAssertTrue(arguments.contains("model_reasoning_effort=\"medium\""))
-        XCTAssertTrue(arguments.contains("web_search=\"live\""))
-        XCTAssertFalse(CodexProvider().arguments(for: cliRequest(.codex, research: nil), messageFile: file).contains("web_search=\"live\""))
+        XCTAssertFalse(arguments.contains { $0.contains("web_search") })
+    }
+
+    /// Without it every run leaves the user's text and the files it read in
+    /// a transcript under ~/.claude/projects.
+    func testClaudeCodeRunsLeaveNoSessionTranscript() {
+        XCTAssertTrue(ClaudeCodeProvider().arguments(for: cliRequest(.claudeCode, research: nil)).contains("--no-session-persistence"))
+        let research = CLIResearchAccess(folders: ["/Users/me/docs"], webSearch: false)
+        XCTAssertTrue(ClaudeCodeProvider().arguments(for: cliRequest(.claudeCode, research: research)).contains("--no-session-persistence"))
+    }
+
+    /// A deleted attachment is skipped, as the Anthropic route skips it.
+    func testCLIWorkspaceSkipsAnAttachmentDeletedSinceAttaching() throws {
+        let fixture = try ReferenceFixture()
+        defer { fixture.remove() }
+        try fixture.write("gone.md", "x")
+        let plan = ReferencePlan.onDemand(roots: fixture.roots(["gone.md"]), fileCount: 1)
+        try FileManager.default.removeItem(at: fixture.url("gone.md"))
+        let workspace = try CLIResearchWorkspace(plan: plan, webSearch: false)
+        defer { workspace.remove() }
+        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: try XCTUnwrap(workspace.url).path), [])
     }
 
     // MARK: Mode editor summary
@@ -182,5 +208,11 @@ final class EnhancedRunnerAnthropicTests: XCTestCase {
         XCTAssertTrue(system.contains("- kb/ (folder)"))
         let results = try XCTUnwrap(sender.messages(ofPost: 1).last?["content"] as? [[String: Any]])
         XCTAssertTrue((results.first?["content"] as? String)?.contains("kb/policy.md:1: Política") == true)
+    }
+}
+
+enum EnhancedPreviewFixtures {
+    static func warning(_ provider: ProviderKind, plan: ReferencePlan, webSearch: Bool = false) -> String? {
+        EnhancementPreview(plan: plan, webSearch: webSearch, provider: provider).warning
     }
 }

@@ -100,8 +100,8 @@ Retypo picks how the material reaches the model from its size, the way Claude Pr
 | Attached text | How it is sent | Providers |
 | --- | --- | --- |
 | Up to ~60k characters (about 15k tokens, 40 files) | Whole, with every run, in a prompt-cached system prompt. One request. | All |
-| More than that | The model researches: `list_files`, `search_files` (case- and accent-insensitive, `a\|b` alternatives) and `read_file`, for up to 8 rounds | Anthropic, Claude Code, Codex |
-| Web search on | Anthropic's server-side search (max 5 per run, $10 per 1,000 searches, added to the cost readout); Claude Code's `WebSearch`; Codex `web_search="live"` | Anthropic, Claude Code, Codex |
+| More than that | The model researches: `list_files`, `search_files` (case- and accent-insensitive, `a\|b` alternatives) and `read_file`, for up to 8 rounds. Lines over 2,000 characters (a Word paragraph, minified JSON) are split into numbered parts, so every part can be found and read | Anthropic, Claude Code, Codex |
+| Web search on | Anthropic's server-side search (max 5 per run, $10 per 1,000 searches, added to the cost readout); Claude Code's `WebSearch` | Anthropic, Claude Code |
 
 The mode editor shows which row applies ("sent in full · 3 files · 12k chars" or "searched on demand · 1,240 files") and warns when the selected provider can't run the mode. Enhanced modes carry a ✦ on their pill. The status line follows the research: *Thinking…*, *Searching "reembolso"*, *Reading kb/planos/clinica.md*.
 
@@ -109,7 +109,9 @@ The research loop is deliberately small: read-only tools, a bounded number of ro
 
 - **Anthropic API:** only what you attached. Every path the model sends is resolved (symlinks and `..` included) and refused outside the attached sources; hidden files (`.env`) and dependency folders are refused even by exact path, unless you attached that file by name.
 - **Claude Code:** the attached folders (`--add-dir`) and a fresh per-run folder holding copies of attached single files. The read tools are never allow-listed, because a bare `Read` rule approves reads anywhere; Claude Code denies reads outside those folders. Nothing writes, runs commands or fetches URLs (`WebFetch` stays off; `WebSearch` only when the mode searches the web).
-- **Codex:** its read-only sandbox, which can read any file your user can. Prefer Anthropic or Claude Code for material you don't trust, especially with web search on.
+- **Codex:** its read-only sandbox, which can read any file your user can; the mode editor says so. Web search is not offered on Codex: it would give a planted instruction a way to send out what the sandbox read.
+
+Claude Code runs with `--no-session-persistence`, so they leave no transcript of your text or of the files they read under `~/.claude/projects`.
 
 Running an old Retypo Air build after enhancing a mode drops that mode's Enhanced settings the next time the old build saves its modes.
 

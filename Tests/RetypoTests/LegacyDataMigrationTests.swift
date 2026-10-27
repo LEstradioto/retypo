@@ -65,7 +65,7 @@ final class LegacyDataMigrationTests: XCTestCase {
         try writeLegacyFile("modes.json", "legacy")
         try fileManager.createDirectory(at: current, withIntermediateDirectories: true)
         try "current".write(to: current.appendingPathComponent("modes.json"), atomically: true, encoding: .utf8)
-        XCTAssertEqual(try LegacyDataMigration.run(home: home), .alreadyMigrated)
+        XCTAssertEqual(try LegacyDataMigration.run(home: home), .keptBoth)
         XCTAssertEqual(try String(contentsOf: current.appendingPathComponent("modes.json"), encoding: .utf8), "current")
         XCTAssertEqual(try String(contentsOf: legacy.appendingPathComponent("modes.json"), encoding: .utf8), "legacy")
     }
@@ -101,11 +101,11 @@ final class LegacyDataMigrationTests: XCTestCase {
         try writeLegacyFile("history.json", "old history")
         try writeCurrentFile("settings.json", "{}")
         try writeCurrentFile("modes.json", "new modes")
-        XCTAssertEqual(try LegacyDataMigration.run(home: home), .merged)
+        XCTAssertEqual(try LegacyDataMigration.run(home: home), .keptBoth, "logged: old modes stay behind")
         XCTAssertEqual(try read(current, "modes.json"), "new modes")
         XCTAssertEqual(try read(current, "history.json"), "old history")
         XCTAssertEqual(try read(legacy, "modes.json"), "old modes")
-        XCTAssertEqual(try LegacyDataMigration.run(home: home), .alreadyMigrated, "nothing left to move")
+        XCTAssertEqual(try LegacyDataMigration.run(home: home), .keptBoth)
     }
 
     /// `~/.retypo-air` as the user's own link into a dotfiles folder: point
@@ -118,5 +118,47 @@ final class LegacyDataMigrationTests: XCTestCase {
         XCTAssertEqual(try LegacyDataMigration.run(home: home), .linked)
         XCTAssertEqual(try read(current, "modes.json"), "synced modes")
         XCTAssertEqual(try LegacyDataMigration.run(home: home), .alreadyMigrated)
+    }
+
+    /// The user's own link, while `~/.retypo` is already in use: nothing
+    /// moves, and the launch log says both were kept.
+    func testUsersOwnLinkNextToAnExistingCurrentIsKept() throws {
+        let synced = home.appendingPathComponent("dotfiles/retypo", isDirectory: true)
+        try fileManager.createDirectory(at: synced, withIntermediateDirectories: true)
+        try fileManager.createSymbolicLink(at: legacy, withDestinationURL: synced)
+        try writeCurrentFile("settings.json", "{}")
+        XCTAssertEqual(try LegacyDataMigration.run(home: home), .keptBoth)
+        XCTAssertEqual(try read(current, "settings.json"), "{}")
+    }
+
+    /// A move that fails halfway must not flip the winner on the retry:
+    /// settings.json moves last, so the retry still sees the old side as
+    /// the one the app used.
+    func testAMergeThatFailsHalfwayResumesWithTheSameWinner() throws {
+        try writeLegacyFile("settings.json", "user settings")
+        try writeLegacyFile("modes.json", "user modes")
+        try writeLegacyFile("history.json", "user history")
+        try writeCurrentFile("modes.json", "default modes")
+        XCTAssertThrowsError(try LegacyDataMigration.run(home: home, fileManager: FailingMoveFileManager(movesBeforeFailure: 1)))
+        XCTAssertEqual(try LegacyDataMigration.run(home: home), .merged)
+        XCTAssertEqual(try read(current, "modes.json"), "user modes")
+        XCTAssertEqual(try read(current, "history.json"), "user history")
+        XCTAssertEqual(try read(current, "settings.json"), "user settings")
+    }
+}
+
+/// Throws on the move after `movesBeforeFailure` successful ones.
+final class FailingMoveFileManager: FileManager {
+    private var remaining: Int
+
+    init(movesBeforeFailure: Int) {
+        remaining = movesBeforeFailure
+        super.init()
+    }
+
+    override func moveItem(at srcURL: URL, to dstURL: URL) throws {
+        guard remaining > 0 else { throw CocoaError(.fileWriteUnknown) }
+        remaining -= 1
+        try super.moveItem(at: srcURL, to: dstURL)
     }
 }

@@ -32,10 +32,12 @@ enum ReferencePaths {
         return relative.contains { $0.hasPrefix(".") || ReferenceCatalog.skippedFolders.contains(String($0)) }
     }
 
+    /// The most specific match: a file attached by name wins over the
+    /// attached folder it sits in, so its own (unhidden) rules apply.
     static func containingRoot(of url: URL, in roots: [ReferenceRoot]) -> ReferenceRoot? {
-        roots.first { root in
+        roots.filter { root in
             url.path == root.url.path || (root.isFolder && url.path.hasPrefix(root.url.path + "/"))
-        }
+        }.max { $0.url.path.count < $1.url.path.count }
     }
 
     private static func labelled(_ path: String, _ roots: [ReferenceRoot]) -> URL? {

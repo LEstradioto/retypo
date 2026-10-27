@@ -38,6 +38,24 @@ enum ReferenceSearch {
         text.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil)
     }
 
+    /// Where the earliest needle starts, in characters of the folded line.
+    static func matchOffset(in folded: String, needles: [String]) -> Int? {
+        needles.compactMap { folded.range(of: $0) }
+            .map { folded.distance(from: folded.startIndex, to: $0.lowerBound) }
+            .min()
+    }
+
+    /// The line itself when short; otherwise a window that starts a little
+    /// before the match, so a hit deep in a long paragraph shows the hit.
+    /// Folding can shift positions by a character (ß → ss); the window absorbs it.
+    static func snippet(of line: Substring, around offset: Int) -> String {
+        guard line.count > lineCharacterLimit else { return String(line) }
+        let start = max(0, min(offset - lineCharacterLimit / 3, line.count - lineCharacterLimit))
+        let from = line.index(line.startIndex, offsetBy: start)
+        let window = line[from...].prefix(lineCharacterLimit)
+        return (start > 0 ? "…" : "") + window + (start + lineCharacterLimit < line.count ? "…" : "")
+    }
+
     /// Keeps the first `limit` hits and counts the rest.
     struct Hits {
         let limit: Int
@@ -49,11 +67,10 @@ enum ReferenceSearch {
         }
 
         mutating func collect(from text: String, path: String, needles: [String]) {
-            for (index, line) in text.split(omittingEmptySubsequences: false, whereSeparator: \.isNewline).enumerated() {
-                let folded = fold(String(line))
-                guard needles.contains(where: folded.contains) else { continue }
+            for (index, line) in ReferenceLines.lines(of: text).enumerated() {
+                guard let offset = matchOffset(in: fold(String(line)), needles: needles) else { continue }
                 total += 1
-                if lines.count < limit { lines.append("\(path):\(index + 1): \(line.prefix(lineCharacterLimit))") }
+                if lines.count < limit { lines.append("\(path):\(index + 1): \(snippet(of: line, around: offset))") }
             }
         }
 
@@ -65,12 +82,32 @@ enum ReferenceSearch {
     }
 }
 
+/// The line view search and read share. A physical line longer than
+/// `width` (a Word paragraph, a minified JSON) becomes several numbered
+/// lines, so every part of it can be found and read, and a search hit's
+/// number is always a line `read_file` can open.
+enum ReferenceLines {
+    static let width = 2_000
+
+    static func lines(of text: String) -> [Substring] {
+        text.split(omittingEmptySubsequences: false, whereSeparator: \.isNewline).flatMap(parts)
+    }
+
+    private static func parts(of line: Substring) -> [Substring] {
+        guard line.count > width else { return [line] }
+        var parts: [Substring] = []
+        var start = line.startIndex
+        while start < line.endIndex {
+            let end = line.index(start, offsetBy: width, limitedBy: line.endIndex) ?? line.endIndex
+            parts.append(line[start..<end])
+            start = end
+        }
+        return parts
+    }
+}
+
 /// `read_file`: numbered lines from a window of the file.
 enum ReferenceExcerpt {
-    /// A minified JSON or SVG is one multi-megabyte line; cut it, or a
-    /// single read overflows the next request's context.
-    static let lineCharacterLimit = 2_000
-
     struct Window: Equatable {
         /// No file has more lines; clamping first keeps the sums below Int.max.
         static let lastLine = 1_000_000_000
@@ -88,23 +125,18 @@ enum ReferenceExcerpt {
     }
 
     static func render(_ text: String, path: String, window: Window, characterLimit: Int) -> String {
-        let lines = text.split(omittingEmptySubsequences: false, whereSeparator: \.isNewline)
+        let lines = ReferenceLines.lines(of: text)
         guard window.first <= lines.count else { return "\(path) has \(lines.count) lines; start_line \(window.first) is past the end." }
         var body: [String] = []
         var characters = 0
         for number in window.first...min(window.last, lines.count) {
-            let line = "\(number): \(clipped(lines[number - 1]))"
+            let line = "\(number): \(lines[number - 1])"
             if characters + line.count > characterLimit, !body.isEmpty { break }
             characters += line.count
             body.append(line)
         }
         let lastShown = window.first + body.count - 1
         return ([header(path, window.first, lastShown, lines.count)] + body + footer(lastShown, lines.count)).joined(separator: "\n")
-    }
-
-    private static func clipped(_ line: Substring) -> String {
-        guard line.count > lineCharacterLimit else { return String(line) }
-        return "\(line.prefix(lineCharacterLimit)) …[\(line.count - lineCharacterLimit) more characters]"
     }
 
     private static func header(_ path: String, _ first: Int, _ last: Int, _ count: Int) -> String {

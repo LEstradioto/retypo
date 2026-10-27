@@ -23,7 +23,7 @@ enum ReferenceTools {
 
     static let read = ToolSpec(
         name: "read_file",
-        description: "Read an attached file with line numbers, up to 400 lines per call. Read around search hits before relying on them. Use start_line to continue a long file.",
+        description: "Read an attached file with line numbers, up to 400 lines per call. Read around search hits before relying on them. Use start_line to continue a long file. Lines over 2,000 characters are split into consecutive numbered lines, the same numbers search_files reports.",
         parameters: schema([
             "path": property("string", "File path as shown by list_files or search_files."),
             "start_line": property("integer", "First line to read, 1-based. Defaults to 1."),

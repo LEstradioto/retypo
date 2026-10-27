@@ -75,10 +75,8 @@ final class LiveEnhancedSmokeTests: XCTestCase {
         XCTAssertTrue(response.text.contains("9"))
     }
 
-    func testCodexReadsALargeFolderWithWebSearchOn() async throws {
-        var enhancement = try largeFolder()
-        enhancement.webSearch = true
-        let response = try await run(request(.codex, model: "default"), enhancement)
+    func testCodexReadsALargeFolder() async throws {
+        let response = try await run(request(.codex, model: "default"), try largeFolder())
         XCTAssertTrue(response.text.contains("9"))
     }
 }
