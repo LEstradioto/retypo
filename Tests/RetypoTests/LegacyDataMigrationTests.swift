@@ -51,6 +51,14 @@ final class LegacyDataMigrationTests: XCTestCase {
         XCTAssertFalse(fileManager.fileExists(atPath: current.path))
     }
 
+    /// A test run once wrote `modes.json` into the real `~/.retypo`, which
+    /// would have made the migration skip the user's `~/.retypo-air`.
+    func testTestsNeverWriteToTheRealDataDirectory() {
+        let real = AppFiles.directory(inHome: fileManager.homeDirectoryForCurrentUser)
+        XCTAssertNotEqual(AppFiles.directory.standardizedFileURL, real.standardizedFileURL)
+        XCTAssertTrue(AppFiles.directory.path.hasPrefix(fileManager.temporaryDirectory.path))
+    }
+
     /// Both directories present (the user already ran a new build once):
     /// never overwrite the current data with the legacy copy.
     func testExistingCurrentDirectoryWins() throws {

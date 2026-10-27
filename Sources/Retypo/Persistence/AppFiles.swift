@@ -15,9 +15,20 @@ enum AppFiles {
     }
 
     static var overriddenDirectory: URL? {
-        guard let raw = ProcessInfo.processInfo.environment[overrideVariable], !raw.isEmpty else { return nil }
-        return URL(fileURLWithPath: raw, isDirectory: true)
+        if let raw = ProcessInfo.processInfo.environment[overrideVariable], !raw.isEmpty {
+            return URL(fileURLWithPath: raw, isDirectory: true)
+        }
+        return isTestProcess ? testDirectory : nil
     }
+
+    /// `AppState.init` and every mode edit save through the real stores, so
+    /// a test run used to write `pricing.json` and `modes.json` into the
+    /// live directory, and once created `~/.retypo` before the legacy data
+    /// had migrated. Under XCTest everything goes to a per-run scratch folder.
+    static var isTestProcess: Bool { ProcessInfo.processInfo.processName == "xctest" }
+
+    private static let testDirectory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("retypo-tests-\(ProcessInfo.processInfo.processIdentifier)", isDirectory: true)
 
     static func directory(inHome home: URL) -> URL {
         home.appendingPathComponent(".retypo", isDirectory: true)
