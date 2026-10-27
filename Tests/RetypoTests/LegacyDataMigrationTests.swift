@@ -120,6 +120,15 @@ final class LegacyDataMigrationTests: XCTestCase {
         XCTAssertEqual(try LegacyDataMigration.run(home: home), .alreadyMigrated)
     }
 
+    /// A link into a volume that is not mounted must not become a
+    /// `~/.retypo` that points at nothing.
+    func testALinkToAMissingFolderStartsFresh() throws {
+        try fileManager.createSymbolicLink(at: legacy, withDestinationURL: home.appendingPathComponent("unmounted/retypo"))
+        XCTAssertEqual(try LegacyDataMigration.run(home: home), .nothingToMigrate)
+        XCTAssertFalse(fileManager.fileExists(atPath: current.path))
+        XCTAssertNil(try? fileManager.destinationOfSymbolicLink(atPath: current.path))
+    }
+
     /// The user's own link, while `~/.retypo` is already in use: nothing
     /// moves, and the launch log says both were kept.
     func testUsersOwnLinkNextToAnExistingCurrentIsKept() throws {

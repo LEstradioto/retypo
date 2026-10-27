@@ -34,8 +34,12 @@ final class CodexProvider: LLMProviderClient {
     /// enhanced mode) gets medium to plan its searches. Web search is never
     /// switched on: the read-only sandbox reads any file the user can, and
     /// search would be the way out for what it read (see `EnhancedRoute`).
+    /// For the same reason research skips config.toml, whose MCP servers (a
+    /// browser, remote tools) would be another way out; sign-in still comes
+    /// from CODEX_HOME, and `default` then means Codex's own default model.
     static func configOverrides(for research: CLIResearchAccess?) -> [String] {
-        ["-c", "model_reasoning_effort=\"\(research == nil ? "low" : "medium")\""]
+        let effort = ["-c", "model_reasoning_effort=\"\(research == nil ? "low" : "medium")\""]
+        return research == nil ? effort : effort + ["--ignore-user-config"]
     }
 
     func arguments(for request: LLMRequest, messageFile: URL) -> [String] {

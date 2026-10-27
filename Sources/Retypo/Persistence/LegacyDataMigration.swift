@@ -52,6 +52,9 @@ enum LegacyDataMigration {
         let samePlace = current.resolvingSymlinksInPath().path == target.resolvingSymlinksInPath().path
         guard target.path != current.standardizedFileURL.path, !samePlace else { return .alreadyMigrated }
         guard !fileManager.fileExists(atPath: current.path) else { return .keptBoth }
+        // A link into an unmounted volume or a deleted folder would leave
+        // ~/.retypo pointing at nothing and every save failing; start fresh.
+        guard isRealDirectory(target.resolvingSymlinksInPath(), fileManager) else { return .nothingToMigrate }
         try fileManager.createSymbolicLink(at: current, withDestinationURL: target)
         return .linked
     }

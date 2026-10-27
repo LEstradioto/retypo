@@ -129,6 +129,8 @@ final class EnhancedRunTests: XCTestCase {
         let arguments = CodexProvider().arguments(for: cliRequest(.codex, research: research), messageFile: file)
         XCTAssertTrue(arguments.contains("model_reasoning_effort=\"medium\""))
         XCTAssertFalse(arguments.contains { $0.contains("web_search") })
+        XCTAssertTrue(arguments.contains("--ignore-user-config"), "config.toml MCP servers would be a way out")
+        XCTAssertFalse(CodexProvider().arguments(for: cliRequest(.codex, research: nil), messageFile: file).contains("--ignore-user-config"))
     }
 
     /// Without it every run leaves the user's text and the files it read in
