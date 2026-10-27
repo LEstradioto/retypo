@@ -61,6 +61,34 @@ struct LLMRequest {
     var user: String
     var maxTokens: Int = 2_000
     var temperature: Double = 0.0
+    /// Set only for an enhanced run on Claude Code or Codex: what the CLI's
+    /// own read, search and web tools may use. `nil` keeps them all off.
+    var research: CLIResearchAccess?
+}
+
+/// What an enhanced run opens up on a CLI provider. Claude Code and Codex
+/// bring their own read, search and web tools; Retypo only allows them.
+struct CLIResearchAccess: Equatable {
+    /// Attached folders, plus the folder of each attached file, because
+    /// Claude Code grants read access per directory.
+    var folders: [String]
+    var webSearch: Bool
+
+    init(folders: [String], webSearch: Bool) {
+        self.folders = folders
+        self.webSearch = webSearch
+    }
+
+    init(plan: ReferencePlan, webSearch: Bool) {
+        var folders: [String] = []
+        if case .onDemand(let roots, _) = plan {
+            for root in roots {
+                let folder = root.isFolder ? root.url.path : root.url.deletingLastPathComponent().path
+                if !folders.contains(folder) { folders.append(folder) }
+            }
+        }
+        self.init(folders: folders, webSearch: webSearch)
+    }
 }
 
 struct LLMResponse {
@@ -83,6 +111,10 @@ enum LLMError: LocalizedError {
     /// The call succeeded but carried no answer — reasoning/thinking models
     /// can spend the whole token budget before emitting a visible token.
     case emptyCompletion(String)
+    /// An enhanced mode used every research round without answering.
+    case researchUnfinished(Int)
+    /// The enhanced mode needs something this provider does not offer.
+    case enhancedUnavailable(String)
 
     var errorDescription: String? {
         switch self {
@@ -95,6 +127,8 @@ enum LLMError: LocalizedError {
         case .emptyCompletion(let reason): "Model returned no text (\(reason))"
         case .cliNotFound(let tool): "`\(tool)` not installed — install the CLI and sign in, then Refresh"
         case .cliFailed(let tool, let message): "\(tool): \(message)"
+        case .researchUnfinished(let rounds): "Still researching after \(rounds) rounds. Make the instruction more specific or attach fewer files"
+        case .enhancedUnavailable(let reason): reason
         }
     }
 }

@@ -5,6 +5,9 @@ struct EditAction: Identifiable, Hashable, Codable {
     var title: String
     var instruction: String
     var isEnabled: Bool = true
+    /// Files, folders and web search the mode may consult. `nil` for plain
+    /// modes, and for every `modes.json` written before enhanced modes.
+    var enhancement: ModeEnhancement?
 
     /// The id of the always-present "freeform" mode, where the user types the
     /// instruction in real time instead of saving it ahead of time. Cannot be

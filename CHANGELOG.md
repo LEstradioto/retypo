@@ -28,6 +28,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
   a quick switcher, debounced ~700ms, preview only (never touches the input).
   Engine picker: Auto (Apple on-device where available, LLM fallback),
   Apple, or your LLM model.
+- Enhanced modes: switch **Enhanced** on in the mode editor, attach files or
+  folders (button or drag from Finder) and optionally web search. Up to ~60k
+  characters go whole with every run on any provider; larger sources are
+  researched with read-only `list_files` / `search_files` / `read_file`
+  tools (Anthropic API), or with Claude Code's and Codex's own read-only
+  tools. Paths are confined to what was attached. Web search costs are added
+  to the cost readout. PDF, Word, RTF and ODT text is extracted.
 - Standard editing shortcuts (`Cmd+C/V/X/A/Z`, `Shift+Cmd+Z`) in every text
   field: the mode prompt editor, mode names, Settings and the Freeform prompt.
   The app now has a real Edit menu; only the main editor handled them before.

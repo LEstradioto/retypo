@@ -16,6 +16,9 @@ struct LauncherModeEditor: View {
                 .textFieldStyle(.roundedBorder)
                 .font(.system(size: 12, weight: .semibold, design: .rounded))
             promptEditor
+            if currentAction.canBeEnhanced {
+                ModeEnhancementEditor(action: currentAction)
+            }
             editorFooter
         }
         .onAppear {

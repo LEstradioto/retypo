@@ -56,15 +56,7 @@ struct HeaderModePicker: View {
             state.setCurrentAction(action.id)
             ModeStripFocus.claim()
         } label: {
-            Text(action.title)
-                .font(.system(size: 11, weight: selected ? .semibold : .medium, design: .rounded))
-                .foregroundStyle(selected ? Color.white : Palette.primaryText)
-                .padding(.horizontal, 11)
-                .padding(.vertical, 5)
-                .background(Capsule(style: .continuous).fill(
-                    selected ? Color.retypoAccent : Palette.card))
-                .overlay(Capsule(style: .continuous).strokeBorder(
-                    selected ? Color.clear : Palette.hairline, lineWidth: 1))
+            ModePillLabel(action: action, selected: selected)
         }
         .buttonStyle(.plain)
         .pointingCursor()

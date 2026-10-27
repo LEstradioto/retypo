@@ -72,7 +72,7 @@ extension AppState {
         }
         guard let context = startEditAction(action, source: source) else { return }
         do {
-            let response = try await llm.router.complete(editRequest(instruction: instruction, model: context.model, original: context.original))
+            let response = try await complete(editRequest(instruction: instruction, model: context.model, original: context.original), for: action, generation: context.generation)
             guard context.generation == llm.generation else { return }
             let text = response.text.trimmingCharacters(in: .whitespacesAndNewlines)
             applyResult(ActionOutcome(text: text, original: context.original, changed: text != context.original, response: response, action: action, instruction: instruction))
@@ -136,7 +136,7 @@ extension AppState {
                 appendCandidate(ActionOutcome(text: parsed.corrected, original: original, changed: parsed.changed, response: response, action: action, instruction: request.system))
             } else {
                 guard let instruction = resolvedInstruction(for: action) else { return }
-                let response = try await llm.router.complete(editRequest(instruction: instruction, model: model, original: original))
+                let response = try await complete(editRequest(instruction: instruction, model: model, original: original), for: action, generation: llm.generation)
                 let text = response.text.trimmingCharacters(in: .whitespacesAndNewlines)
                 appendCandidate(ActionOutcome(text: text, original: original, changed: text != original, response: response, action: action, instruction: instruction))
             }

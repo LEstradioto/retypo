@@ -2,11 +2,13 @@ import Foundation
 
 final class LLMRouter {
     private let providers: [ProviderKind: LLMProviderClient]
+    private let memory: RejectedParameterMemory
 
     init() {
         // One memory shared by every provider: a parameter a model rejects is
         // learned once and skipped for the rest of the session.
         let memory = RejectedParameterMemory()
+        self.memory = memory
         providers = [
             .groq: Self.groq(memory),
             .openrouter: Self.openRouter(memory),
@@ -35,6 +37,16 @@ final class LLMRouter {
     func complete(_ request: LLMRequest) async throws -> LLMResponse {
         guard let client = providers[request.provider] else { throw LLMError.invalidResponse }
         return try await client.complete(request, apiKey: try credentials(for: request.provider))
+    }
+
+    /// An enhanced mode's run: research first, then the finished text.
+    func completeEnhanced(
+        _ request: LLMRequest,
+        enhancement: ModeEnhancement,
+        onProgress: @escaping (AgentProgress) async -> Void
+    ) async throws -> LLMResponse {
+        let runner = EnhancedRunner(router: self, anthropic: ProviderTransport(provider: .anthropic, memory: memory))
+        return try await runner.run(request, enhancement: enhancement, onProgress: onProgress)
     }
 
     func listModels(for provider: ProviderKind) async throws -> [ProviderModel] {

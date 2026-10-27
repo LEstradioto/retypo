@@ -3,9 +3,22 @@ import Foundation
 struct TokenUsage: Codable, Hashable {
     var inputTokens: Int
     var outputTokens: Int
+    /// Server-side web searches, billed per search on top of tokens. `nil`
+    /// for runs without search and for every entry saved before enhanced modes.
+    var webSearches: Int?
     var totalTokens: Int { inputTokens + outputTokens }
 
     static let zero = TokenUsage(inputTokens: 0, outputTokens: 0)
+
+    /// The usage of a run made of several requests (an enhanced mode's rounds).
+    func adding(_ other: TokenUsage) -> TokenUsage {
+        let searches = (webSearches ?? 0) + (other.webSearches ?? 0)
+        return TokenUsage(
+            inputTokens: inputTokens + other.inputTokens,
+            outputTokens: outputTokens + other.outputTokens,
+            webSearches: searches > 0 ? searches : nil
+        )
+    }
 }
 
 struct ModelPricing: Codable, Hashable {

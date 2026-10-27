@@ -18,6 +18,8 @@ final class CostTracker: ObservableObject {
     /// Set when the last call ran through a subscription CLI. Those have no
     /// per-token price, and a bare "$—" reads like the pricing table broke.
     @Published private(set) var lastCallWasSubscription = false
+    /// Anthropic's web search: $10 per 1,000 searches, on top of tokens.
+    static let usdPerWebSearch = 0.01
 
     init(initialPricing: [String: ModelPricing], initialUsageLedger: [UsageLedgerEntry]) {
         self.pricing = initialPricing
@@ -59,7 +61,7 @@ final class CostTracker: ObservableObject {
         guard let p = pricing[key] else { return nil }
         let inputCost = Double(usage.inputTokens) / 1_000_000 * p.inputPerMillion
         let outputCost = Double(usage.outputTokens) / 1_000_000 * p.outputPerMillion
-        return inputCost + outputCost
+        return inputCost + outputCost + Double(usage.webSearches ?? 0) * Self.usdPerWebSearch
     }
 
     func formatCost(_ value: Double?) -> String {

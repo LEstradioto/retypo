@@ -3,18 +3,29 @@ import Foundation
 final class AnthropicProvider: LLMProviderClient {
     private let baseURL = URL(staticString: "https://api.anthropic.com/v1")
     private let transport: ProviderTransport
+    private let sender: ProviderSending
 
-    init(memory: RejectedParameterMemory) {
-        transport = ProviderTransport(provider: .anthropic, memory: memory)
+    /// `sender` replaces the network for tests; the model list always uses
+    /// the transport.
+    init(memory: RejectedParameterMemory, sender: ProviderSending? = nil) {
+        let transport = ProviderTransport(provider: .anthropic, memory: memory)
+        self.transport = transport
+        self.sender = sender ?? transport
     }
 
     func complete(_ request: LLMRequest, apiKey: String) async throws -> LLMResponse {
-        let object = try await transport.send(messagesPost(request, apiKey: apiKey), model: request.model)
+        let object = try await sender.send(messagesPost(request, apiKey: apiKey), model: request.model)
         guard let text = extractText(from: object), !text.isEmpty else {
             throw LLMError.emptyCompletion(AnthropicBudget.emptyReason(object))
         }
-        return LLMResponse(text: text, usage: parseUsage(object["usage"] as? [String: Any]))
+        return LLMResponse(text: text, usage: AnthropicWire.usage(in: object))
     }
+
+    /// An enhanced mode's inline documents make the system prompt long and
+    /// identical across runs of the mode; caching it makes repeats about
+    /// ten times cheaper on input. Short prompts stay uncached: they fall
+    /// under the minimum cacheable length anyway.
+    static let cachedSystemCharacters = 6_000
 
     /// `/v1/models` pages at 20 by default, so ask for the full catalogue in
     /// one shot — otherwise the newest models push older ones off the list.
@@ -29,6 +40,15 @@ final class AnthropicProvider: LLMProviderClient {
     }
 
     private func messagesPost(_ request: LLMRequest, apiKey: String) -> ProviderPost {
+        ProviderPost(
+            url: baseURL.appendingPathComponent("messages"),
+            headers: headers(apiKey),
+            body: messagesBody(request),
+            optionalKeys: ["temperature", "top_p", "top_k", "thinking", "cache_control"]
+        )
+    }
+
+    private func messagesBody(_ request: LLMRequest) -> [String: Any] {
         var body: [String: Any] = [
             "model": request.model,
             "system": request.system,
@@ -38,12 +58,10 @@ final class AnthropicProvider: LLMProviderClient {
         if ModelParameterSupport.anthropicAcceptsTemperature(request.model) {
             body["temperature"] = request.temperature
         }
-        return ProviderPost(
-            url: baseURL.appendingPathComponent("messages"),
-            headers: headers(apiKey),
-            body: body,
-            optionalKeys: ["temperature", "top_p", "top_k", "thinking"]
-        )
+        if request.system.count >= Self.cachedSystemCharacters {
+            body["cache_control"] = ["type": "ephemeral"]
+        }
+        return body
     }
 
     private func headers(_ apiKey: String) -> [String: String] {
@@ -61,13 +79,5 @@ final class AnthropicProvider: LLMProviderClient {
         guard let id = item["id"] as? String else { return nil }
         let name = item["display_name"] as? String ?? item["name"] as? String ?? id
         return ProviderModel(id: id, name: name)
-    }
-
-    private func parseUsage(_ usage: [String: Any]?) -> TokenUsage {
-        guard let usage else { return .zero }
-        return TokenUsage(
-            inputTokens: usage["input_tokens"] as? Int ?? 0,
-            outputTokens: usage["output_tokens"] as? Int ?? 0
-        )
     }
 }

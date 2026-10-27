@@ -9,6 +9,8 @@ struct ProviderPost {
     let headers: [String: String]
     var body: [String: Any]
     let optionalKeys: Set<String>
+    /// URLSession's default. Enhanced runs wait on whole tool turns.
+    var timeout: TimeInterval = 60
 
     func dropping(_ keys: Set<String>) -> ProviderPost {
         guard !keys.isEmpty else { return self }
@@ -52,6 +54,7 @@ struct ProviderTransport {
     private func perform(_ post: ProviderPost) async throws -> [String: Any] {
         var request = URLRequest(url: post.url)
         request.httpMethod = "POST"
+        request.timeoutInterval = post.timeout
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         for (key, value) in post.headers { request.setValue(value, forHTTPHeaderField: key) }
         request.httpBody = try JSONSerialization.data(withJSONObject: post.body)
@@ -74,3 +77,10 @@ struct ProviderTransport {
         return name
     }
 }
+
+/// The send seam of the API providers, so tests can script responses.
+protocol ProviderSending {
+    func send(_ post: ProviderPost, model: String) async throws -> [String: Any]
+}
+
+extension ProviderTransport: ProviderSending {}

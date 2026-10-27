@@ -28,6 +28,16 @@ final class CodexProvider: LLMProviderClient {
         return CLIModelCatalog.codex
     }
 
+    /// The user's config.toml may sit at xhigh effort; a rewrite does not
+    /// need it, and low cuts several seconds off every run. Research (an
+    /// enhanced mode) gets medium to plan its searches. The read-only
+    /// sandbox already lets Codex read the paths the prompt lists, so only
+    /// web search has to be switched on.
+    static func configOverrides(for research: CLIResearchAccess?) -> [String] {
+        let effort = ["-c", "model_reasoning_effort=\"\(research == nil ? "low" : "medium")\""]
+        return research?.webSearch == true ? effort + ["-c", "web_search=\"live\""] : effort
+    }
+
     func arguments(for request: LLMRequest, messageFile: URL) -> [String] {
         var arguments = [
             "exec",
@@ -35,11 +45,8 @@ final class CodexProvider: LLMProviderClient {
             "--ephemeral",             // no session files for a one-shot edit
             "-s", "read-only",         // a text transform never needs to write
             "--json",
-            // The user's config.toml may sit at xhigh effort; a rewrite does
-            // not need it, and low cuts several seconds off every run.
-            "-c", "model_reasoning_effort=\"low\"",
             "-o", messageFile.path
-        ]
+        ] + Self.configOverrides(for: request.research)
         if let model = CLIModelCatalog.explicitModel(request.model) {
             arguments += ["-m", model]
         }

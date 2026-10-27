@@ -55,6 +55,7 @@ In Settings, pick a provider and click Refresh to load its models.
 - Automatic show on active screen for multi-screen setups.
 - Multi-provider: Groq, Anthropic, OpenAI, OpenRouter — plus Claude Code and Codex via subscription, no API key.
 - Per-mode and per-model shortcuts.
+- Enhanced modes: attach files, folders and web search to a mode; it researches before it answers. See [Enhanced modes](#enhanced-modes).
 - Cost tracking: last, session, today. Editable per-model pricing.
 - Footer stats: WPM, changed-word delta, char count.
 - Auto-correct skips short text, code fences, shell commands, symbol-heavy lines. So it never rewrites a command you're typing.
@@ -63,7 +64,7 @@ In Settings, pick a provider and click Refresh to load its models.
 
 Pick **Claude Code** or **Codex** as the provider and the panel shells out to the CLI you are already signed into, so runs bill your subscription instead of an API key. Nothing to configure beyond having the CLI installed and logged in (`claude`, `codex login`).
 
-The panel launches the CLI with its own API keys stripped from the child environment — otherwise Claude Code would find `ANTHROPIC_API_KEY` and quietly bill the API instead of the subscription. It also runs in a scratch directory (no CLAUDE.md/AGENTS.md pickup), one turn only, tools disabled, and Codex sandboxed read-only at low reasoning effort.
+The panel launches the CLI with its own API keys stripped from the child environment — otherwise Claude Code would find `ANTHROPIC_API_KEY` and quietly bill the API instead of the subscription. It also runs in a scratch directory (no CLAUDE.md/AGENTS.md pickup), one turn only, tools disabled, and Codex sandboxed read-only at low reasoning effort. [Enhanced modes](#enhanced-modes) are the exception: they allow the CLI's read-only and web tools and more turns.
 
 Worth knowing before you switch:
 
@@ -86,6 +87,27 @@ A mode is a saved system prompt. **Freeform** is special: type the prompt live e
 Built-in: Correct, Typos & Grammar, Improve Writing, Translate, Simplify, Summarize, Bullets, Better way of saying, Make this Tweet Fit, Generate 3 variations, How to respond 3 ways, Caveman, **Freeform**.
 
 Press `Cmd+D`, then click the pencil on a mode card to rename it or edit its prompt in place. Drag the corner grip of the prompt box to resize it; the standard editing shortcuts work there and in every other field. Changes save automatically; built-in modes also offer **Reset default**. Edit, disable, and shortcut-bind modes in Settings. Stored in `~/.retypo/modes.json`.
+
+## Enhanced modes
+
+A plain mode is one request and one answer. Switch **Enhanced** on in the mode editor (`Cmd+D` → pencil) and the mode can consult reference material before it answers:
+
+- **Files and folders.** Click *Add files or folders* or drop them from Finder. Markdown, text, PDF, Word (`.docx`, `.doc`), RTF and ODT are read; images, archives and binaries are skipped, and so are hidden files and `node_modules`, `build` or `dist` folders.
+- **Web search** (checkbox).
+
+Retypo picks how the material reaches the model from its size, the way Claude Projects does:
+
+| Attached text | How it is sent | Providers |
+| --- | --- | --- |
+| Up to ~60k characters (about 15k tokens, 40 files) | Whole, with every run, in a prompt-cached system prompt. One request. | All |
+| More than that | The model researches: `list_files`, `search_files` (case- and accent-insensitive, `a\|b` alternatives) and `read_file`, for up to 8 rounds | Anthropic, Claude Code, Codex |
+| Web search on | Anthropic's server-side search (max 5 per run, $10 per 1,000 searches, added to the cost readout); Claude Code's `WebSearch`; Codex `web_search="live"` | Anthropic, Claude Code, Codex |
+
+The mode editor shows which row applies ("sent in full · 3 files · 12k chars" or "searched on demand · 1,240 files") and warns when the selected provider can't run the mode. Enhanced modes carry a ✦ on their pill. The status line follows the research: *Thinking…*, *Searching "reembolso"*, *Reading kb/planos/clinica.md*.
+
+The research loop is deliberately small: read-only tools, a bounded number of rounds, and only the final text comes back to the editor. Every path the model sends is resolved (symlinks and `..` included) and refused if it lands outside what you attached. Attached text and web pages are presented to the model as reference data, not instructions. Claude Code gets `Read`, `Grep` and `Glob` on the attached folders (for a single attached file, its folder) and nothing that writes; Codex keeps its read-only sandbox.
+
+Measured on Claude Haiku 5.5 (live smoke tests, `Tests/RetypoTests/LiveEnhancedSmokeTests.swift`): small documents sent whole, 1.8s; a ~120k-character folder searched in 2 rounds, 5.6s and ~7k input tokens; one web search, 6s. Haiku 5.5 thinks adaptively by default, which is the "thinking" in the loop. Claude Code (haiku) took 6.8s and Codex 13.7s on the same folder.
 
 ## External import precedence
 
