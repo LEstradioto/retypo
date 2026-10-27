@@ -1,6 +1,6 @@
-# Retypo Air ![Retypo Air](assets/bubble-128.png) 
+# Retypo ![Retypo](assets/bubble-128.png) 
 
-![Retypo Air glass panel docked at the bottom of the screen, showing inline diff highlights over a TextEdit document.](glass-bottom-1-main.webp)
+![Retypo glass panel docked at the bottom of the screen, showing inline diff highlights over a TextEdit document.](glass-bottom-1-main.webp)
 
 Tiny macOS floating textbox. Run saved prompts on selected text (from any app or manual input), auto-copy the result.
 
@@ -9,7 +9,7 @@ Tiny macOS floating textbox. Run saved prompts on selected text (from any app or
 >
 > Built for me: global shortcut, small textbox, snappy nav, saved prompts, clipboard. That's it.
 >
-> macOS only. No notarized installer; you run the dev script, which uses a local Apple Development identity when available. Local-first: settings, drafts, history, API keys all live under `~/.retypo-air/`. No telemetry.
+> macOS only. No notarized installer; you run the dev script, which uses a local Apple Development identity when available. Local-first: settings, drafts, history, API keys all live under `~/.retypo/`. No telemetry.
 
 ## Why
 
@@ -20,16 +20,17 @@ Other reason: typing long prompts into CLI agents like Codex or Claude Code, the
 ## Caveats
 
 - macOS 13+, Swift 5.9+, Xcode CLT or Xcode.
-- Selection import (`Cmd+Shift+Space` from another app) needs Accessibility permission. Grant once when prompted; pick the copy you launch (`build-dev/RetypoAir-dev.app`, or `/Applications/RetypoAir-dev.app` when installed). Developer signing keeps the permission stable across rebuilds; without a local signing identity, macOS may ask again after the binary changes.
+- Selection import (`Cmd+Shift+Space` from another app) needs Accessibility permission. Grant once when prompted; pick the copy you launch (`build-dev/Retypo-dev.app`, or `/Applications/Retypo-dev.app` when installed). Developer signing keeps the permission stable across rebuilds; without a local signing identity, macOS may ask again after the binary changes.
 - Terminal prompt import for Codex/Claude Code uses the terminal's accessible text buffer and is on by default.
 - VS Code integrated terminal import is experimental and on by default in Settings. It briefly opens VS Code Accessible View with `Option+F2`, reads the buffer through Accessibility, then presses `Esc`.
 - BYO API key (Groq, Anthropic, OpenAI, OpenRouter) **or** your existing Claude Code / Codex subscription through the signed-in CLI. See [Subscription providers](#subscription-providers-claude-code--codex).
+- Renamed from Retypo Air. The first launch moves `~/.retypo-air/` to `~/.retypo/` and leaves a symlink at the old path, so an old build still finds its data. The bundle id changed too (`app.retypo.dev`), so macOS asks for Accessibility permission again; delete `/Applications/RetypoAir-dev.app` once the new app works.
 
 ## Quick start
 
 ```bash
-cp .env.example .env       # add at least one *_API_KEY. Load order: shell env, .env in CWD, ~/.retypo-air/.env. First wins.
-scripts/dev-app.sh         # builds + opens build-dev/RetypoAir-dev.app
+cp .env.example .env       # add at least one *_API_KEY. Load order: shell env, .env in CWD, ~/.retypo/.env. First wins.
+scripts/dev-app.sh         # builds + opens build-dev/Retypo-dev.app
 RETYPO_BUILD_CONFIGURATION=release scripts/dev-app.sh  # optimized local app
 RETYPO_BUILD_CONFIGURATION=release RETYPO_INSTALL_APP=1 scripts/dev-app.sh  # install + open /Applications copy
 ```
@@ -84,7 +85,7 @@ A mode is a saved system prompt. **Freeform** is special: type the prompt live e
 
 Built-in: Correct, Typos & Grammar, Improve Writing, Translate, Simplify, Summarize, Bullets, Better way of saying, Make this Tweet Fit, Generate 3 variations, How to respond 3 ways, Caveman, **Freeform**.
 
-Press `Cmd+D`, then click the pencil on a mode card to rename it or edit its prompt in place. Changes save automatically; built-in modes also offer **Reset default**. Edit, disable, and shortcut-bind modes in Settings. Stored in `~/.retypo-air/modes.json`.
+Press `Cmd+D`, then click the pencil on a mode card to rename it or edit its prompt in place. Changes save automatically; built-in modes also offer **Reset default**. Edit, disable, and shortcut-bind modes in Settings. Stored in `~/.retypo/modes.json`.
 
 ## External import precedence
 
@@ -98,7 +99,7 @@ When `Cmd+Shift+Space` from another app:
 
 Every imported value is previewed and asks for confirmation before it replaces
 the editor, including imports received while the editor is empty. Failures:
-`~/.retypo-air/import-debug.log`.
+`~/.retypo/import-debug.log`.
 
 ## Keyboard
 
@@ -123,7 +124,7 @@ the editor, including imports received while the editor is empty. Failures:
 
 `Cmd+Shift+Space` is not Spotlight (`Cmd+Space`) or emoji viewer (`Ctrl+Cmd+Space`). A few apps may bind it but it's usually safe.
 
-## Files (`~/.retypo-air/`)
+## Files (`~/.retypo/`)
 
 | File | Purpose |
 | --- | --- |

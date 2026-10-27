@@ -2,20 +2,20 @@
 import PackageDescription
 
 let package = Package(
-    name: "RetypoAir",
+    name: "Retypo",
     platforms: [.macOS(.v13)],
     products: [
-        .executable(name: "RetypoAir", targets: ["RetypoAir"])
+        .executable(name: "Retypo", targets: ["Retypo"])
     ],
     targets: [
         .executableTarget(
-            name: "RetypoAir",
-            path: "Sources/RetypoAir"
+            name: "Retypo",
+            path: "Sources/Retypo"
         ),
         .testTarget(
-            name: "RetypoAirTests",
-            dependencies: ["RetypoAir"],
-            path: "Tests/RetypoAirTests"
+            name: "RetypoTests",
+            dependencies: ["Retypo"],
+            path: "Tests/RetypoTests"
         )
     ]
 )

@@ -1,0 +1,75 @@
+import Foundation
+
+/// The directory holding settings, modes, drafts, history and the optional
+/// `.env`. It was `~/.retypo-air` until the Retypo Air → Retypo rename;
+/// `LegacyDataMigration` moves an existing one over on first launch.
+enum AppFiles {
+    /// Points a second copy of the app (a dev build next to the installed
+    /// one) at scratch data instead of the live directory. Example:
+    /// `RETYPO_DATA_DIR=/tmp/retypo-scratch build-dev/Retypo-dev.app/Contents/MacOS/Retypo`
+    static let overrideVariable = "RETYPO_DATA_DIR"
+
+    static var directory: URL {
+        if let override = overriddenDirectory { return override }
+        return directory(inHome: FileManager.default.homeDirectoryForCurrentUser)
+    }
+
+    static var overriddenDirectory: URL? {
+        guard let raw = ProcessInfo.processInfo.environment[overrideVariable], !raw.isEmpty else { return nil }
+        return URL(fileURLWithPath: raw, isDirectory: true)
+    }
+
+    static func directory(inHome home: URL) -> URL {
+        home.appendingPathComponent(".retypo", isDirectory: true)
+    }
+
+    static func legacyDirectory(inHome home: URL) -> URL {
+        home.appendingPathComponent(".retypo-air", isDirectory: true)
+    }
+
+    static func url(_ name: String) -> URL {
+        directory.appendingPathComponent(name)
+    }
+}
+
+/// Moves the pre-rename `~/.retypo-air` directory to `~/.retypo` once, then
+/// leaves a symlink at the old path. An older build that is still installed,
+/// or still running while the new one starts, keeps reading and writing the
+/// same files instead of silently starting over with defaults.
+enum LegacyDataMigration {
+    enum Outcome: Equatable {
+        case moved
+        case alreadyMigrated
+        case nothingToMigrate
+    }
+
+    /// Runs before `DotEnvLoader`, which reads `.env` from the data directory.
+    static func runAtLaunch() {
+        guard AppFiles.overriddenDirectory == nil else { return }
+        do {
+            let outcome = try run(home: FileManager.default.homeDirectoryForCurrentUser)
+            if outcome == .moved { DebugLog.log("moved ~/.retypo-air to ~/.retypo") }
+        } catch {
+            fputs("Retypo could not move ~/.retypo-air to ~/.retypo: \(error)\n", stderr)
+        }
+    }
+
+    /// Idempotent: a second run finds `~/.retypo` and does nothing.
+    @discardableResult
+    static func run(home: URL, fileManager: FileManager = .default) throws -> Outcome {
+        let current = AppFiles.directory(inHome: home)
+        let legacy = AppFiles.legacyDirectory(inHome: home)
+        if fileManager.fileExists(atPath: current.path) { return .alreadyMigrated }
+        guard isRealDirectory(legacy, fileManager: fileManager) else { return .nothingToMigrate }
+        try fileManager.moveItem(at: legacy, to: current)
+        try fileManager.createSymbolicLink(at: legacy, withDestinationURL: current)
+        return .moved
+    }
+
+    /// `attributesOfItem` does not follow symlinks, so the link a previous
+    /// migration left behind reads as "nothing to migrate".
+    private static func isRealDirectory(_ url: URL, fileManager: FileManager) -> Bool {
+        let type = (try? fileManager.attributesOfItem(atPath: url.path))?[.type] as? FileAttributeType
+        return type == .typeDirectory
+    }
+}

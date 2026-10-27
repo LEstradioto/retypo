@@ -1,6 +1,6 @@
 # Performance Plan
 
-Retypo Air should feel instant while hidden, opening, importing, and typing.
+Retypo should feel instant while hidden, opening, importing, and typing.
 Performance work follows one rule: measure a user-visible path, make one focused
 change, and repeat the same measurement before claiming an improvement.
 

@@ -5,20 +5,20 @@
             "request": "launch",
             "args": [],
             "cwd": "${workspaceFolder:re-typoer}",
-            "name": "Debug RetypoAir",
-            "target": "RetypoAir",
+            "name": "Debug Retypo",
+            "target": "Retypo",
             "configuration": "debug",
-            "preLaunchTask": "swift: Build Debug RetypoAir"
+            "preLaunchTask": "swift: Build Debug Retypo"
         },
         {
             "type": "swift",
             "request": "launch",
             "args": [],
             "cwd": "${workspaceFolder:re-typoer}",
-            "name": "Release RetypoAir",
-            "target": "RetypoAir",
+            "name": "Release Retypo",
+            "target": "Retypo",
             "configuration": "release",
-            "preLaunchTask": "swift: Build Release RetypoAir"
+            "preLaunchTask": "swift: Build Release Retypo"
         }
     ]
 }

@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to Retypo Air are documented here.
+All notable changes to Retypo are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
@@ -30,6 +30,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
   Apple, or your LLM model.
 
 ### Changed
+- Renamed Retypo Air to Retypo: app, Swift package, bundle id
+  (`app.retypo.dev`), and data directory. The first launch moves
+  `~/.retypo-air/` to `~/.retypo/` and leaves a symlink at the old path.
+  macOS asks for Accessibility permission again because the bundle id changed.
 - Settings slimmed to an opinionated minimum: editor layout picker, auto-run,
   hide-after-copy, and the import debounce are gone.
 - Solid light/dark palettes replace translucency; panels get their appearance

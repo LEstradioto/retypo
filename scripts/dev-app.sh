@@ -20,15 +20,20 @@ if [[ "$RETYPO_INSTALL_APP" != "0" && "$RETYPO_INSTALL_APP" != "1" ]]; then
   exit 2
 fi
 
-osascript -e 'tell application id "app.retypoair.dev" to quit' >/dev/null 2>&1 || true
+# Quit this build and the pre-rename Retypo Air build: both register the same
+# global shortcut, and only one of them can hold it.
+for app_id in app.retypo.dev app.retypoair.dev; do
+  osascript -e "if application id \"$app_id\" is running then tell application id \"$app_id\" to quit" >/dev/null 2>&1 || true
+done
+pkill -f '/Retypo($| )' >/dev/null 2>&1 || true
 pkill -f '/RetypoAir($| )' >/dev/null 2>&1 || true
-pkill -f 'swift run.*RetypoAir' >/dev/null 2>&1 || true
+pkill -f 'swift run.*Retypo' >/dev/null 2>&1 || true
 
 cd "$APP_DIR"
 swift build -c "$RETYPO_BUILD_CONFIGURATION"
 
 BIN_DIR="$(swift build -c "$RETYPO_BUILD_CONFIGURATION" --show-bin-path)"
-APP_BUNDLE="$APP_DIR/build-dev/RetypoAir-dev.app"
+APP_BUNDLE="$APP_DIR/build-dev/Retypo-dev.app"
 CONTENTS_DIR="$APP_BUNDLE/Contents"
 MACOS_DIR="$CONTENTS_DIR/MacOS"
 RESOURCES_DIR="$CONTENTS_DIR/Resources"
@@ -44,17 +49,17 @@ cat > "$CONTENTS_DIR/Info.plist" <<'PLIST'
   <key>CFBundleDevelopmentRegion</key>
   <string>en</string>
   <key>CFBundleExecutable</key>
-  <string>RetypoAir</string>
+  <string>Retypo</string>
   <key>CFBundleIconFile</key>
   <string>AppIcon</string>
   <key>CFBundleIdentifier</key>
-  <string>app.retypoair.dev</string>
+  <string>app.retypo.dev</string>
   <key>CFBundleInfoDictionaryVersion</key>
   <string>6.0</string>
   <key>CFBundleName</key>
-  <string>Retypo Air</string>
+  <string>Retypo</string>
   <key>CFBundleDisplayName</key>
-  <string>Retypo Air Dev</string>
+  <string>Retypo Dev</string>
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>
@@ -66,7 +71,7 @@ cat > "$CONTENTS_DIR/Info.plist" <<'PLIST'
   <key>NSHighResolutionCapable</key>
   <true/>
   <key>NSAppleEventsUsageDescription</key>
-  <string>Retypo Air can import selected text by briefly sending Copy to the focused app.</string>
+  <string>Retypo can import selected text by briefly sending Copy to the focused app.</string>
 </dict>
 </plist>
 PLIST
@@ -93,8 +98,8 @@ if [[ -f "$ICON_MASTER" ]]; then
   rm -rf "$(dirname "$ICONSET_DIR")"
 fi
 
-cp "$BIN_DIR/RetypoAir" "$MACOS_DIR/RetypoAir"
-chmod +x "$MACOS_DIR/RetypoAir"
+cp "$BIN_DIR/Retypo" "$MACOS_DIR/Retypo"
+chmod +x "$MACOS_DIR/Retypo"
 
 for bundle_path in "$BIN_DIR"/*.bundle; do
   [[ -e "$bundle_path" ]] || continue
@@ -118,13 +123,16 @@ codesign --verify --deep --strict "$APP_BUNDLE"
 echo "Built ($RETYPO_BUILD_CONFIGURATION): $APP_BUNDLE"
 RETYPO_APP_TO_OPEN="$APP_BUNDLE"
 if [[ "$RETYPO_INSTALL_APP" == "1" ]]; then
-  RETYPO_INSTALLED_APP="/Applications/RetypoAir-dev.app"
+  RETYPO_INSTALLED_APP="/Applications/Retypo-dev.app"
   ditto "$APP_BUNDLE" "$RETYPO_INSTALLED_APP"
   codesign --verify --deep --strict "$RETYPO_INSTALLED_APP"
   RETYPO_APP_TO_OPEN="$RETYPO_INSTALLED_APP"
   echo "Installed: $RETYPO_INSTALLED_APP"
+  if [[ -d "/Applications/RetypoAir-dev.app" ]]; then
+    echo "Note: the pre-rename /Applications/RetypoAir-dev.app is still installed; delete it once Retypo works." >&2
+  fi
 fi
-echo "Open $RETYPO_APP_TO_OPEN, then grant Accessibility permission to 'Retypo Air Dev' if prompted."
+echo "Open $RETYPO_APP_TO_OPEN, then grant Accessibility permission to 'Retypo Dev' if prompted."
 
 if [[ "${RETYPO_OPEN_APP:-1}" != "0" ]]; then
   open -n "$RETYPO_APP_TO_OPEN" --args "$@"

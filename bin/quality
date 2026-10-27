@@ -35,7 +35,7 @@ fi
 
 ARCH="$(uname -m | sed 's/x86_64/x86_64/;s/arm64/arm64/')"
 PROFDATA=".build/${ARCH}-apple-macosx/debug/codecov/default.profdata"
-TESTBIN=".build/${ARCH}-apple-macosx/debug/RetypoAirPackageTests.xctest/Contents/MacOS/RetypoAirPackageTests"
+TESTBIN=".build/${ARCH}-apple-macosx/debug/RetypoPackageTests.xctest/Contents/MacOS/RetypoPackageTests"
 if [ ! -f "$PROFDATA" ] || [ ! -f "$TESTBIN" ]; then
     echo "  coverage artifacts missing; skipping coverage gate"
     echo '{"line_coverage_percent": 0}' > "$OUT/coverage.json"

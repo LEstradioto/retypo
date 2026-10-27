@@ -1,4 +1,4 @@
-# Quality Gates — RetypoAir
+# Quality Gates — Retypo
 
 Implements the `apply-quality-gates` skill (`.claude/skills/apply-quality-gates/SKILL.md`),
 adapted from CodeMiner42's *"Stop Reading AI Code, Start Measuring It"* playbook.
