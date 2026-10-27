@@ -52,8 +52,9 @@ final class ReferenceToolbox {
         return value
     }
 
+    /// Checked before handing the text out, so one read cannot cross it.
     private func charge(_ content: String) throws -> String {
-        guard charactersReturned < Self.runCharacterBudget else {
+        guard charactersReturned + content.count <= Self.runCharacterBudget else {
             throw ReferenceToolError.budgetExhausted(Self.runCharacterBudget)
         }
         charactersReturned += content.count

@@ -108,4 +108,40 @@ final class ReferenceToolboxTests: XCTestCase {
     func testOutcomeKeepsTheCallID() {
         XCTAssertEqual(call("list_files", [:]).callID, "call-1")
     }
+
+    // MARK: Hostile arguments
+
+    /// `1e20` is valid JSON; converting it with `Int(_:)` used to trap.
+    func testHugeLineNumbersDoNotCrash() {
+        XCTAssertFalse(call("read_file", ["path": "docs/guia.txt", "start_line": 1e20]).isError)
+        XCTAssertTrue(call("read_file", ["path": "docs/guia.txt", "start_line": Int.max, "end_line": Int.max]).content.contains("past the end"))
+    }
+
+    /// A minified one-line file must not flood the next request.
+    func testOneHugeLineIsCut() throws {
+        try fixture.write("docs/data.json", String(repeating: "x", count: 500_000))
+        let outcome = call("read_file", ["path": "docs/data.json"])
+        XCTAssertLessThan(outcome.content.count, ReferenceToolbox.readCharacterLimit)
+        XCTAssertTrue(outcome.content.contains("more characters]"))
+    }
+
+    /// Hidden files and dependency folders stay out of reach even by exact path.
+    func testHiddenFilesAreNotReadableByPath() {
+        let outcome = call("read_file", ["path": "docs/.hidden.md"])
+        XCTAssertTrue(outcome.isError)
+        XCTAssertFalse(outcome.content.contains("reembolso hidden"))
+        XCTAssertTrue(call("read_file", ["path": "docs/node_modules/lib/readme.md"]).isError)
+        XCTAssertTrue(call("search_files", ["query": "reembolso", "path": "docs/node_modules"]).isError)
+    }
+
+    /// Attaching a hidden file by name is a deliberate choice; it stays readable.
+    func testAHiddenFileAttachedByNameIsReadable() {
+        let toolbox = ReferenceToolbox(roots: fixture.roots(["docs/.hidden.md"]))
+        XCTAssertFalse(toolbox.run(ToolCall(id: "1", name: "read_file", arguments: ["path": ".hidden.md"])).isError)
+    }
+
+    func testAFolderSymlinkIsAttachedAsAFolder() throws {
+        try FileManager.default.createSymbolicLink(at: fixture.url("docs-link"), withDestinationURL: fixture.url("docs"))
+        XCTAssertTrue(ReferenceSource(url: fixture.url("docs-link")).isFolder)
+    }
 }

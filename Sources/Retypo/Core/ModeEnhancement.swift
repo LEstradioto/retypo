@@ -55,10 +55,13 @@ struct ReferenceSource: Codable, Hashable, Identifiable {
     var name: String { url.lastPathComponent }
 
     /// Example: `ReferenceSource(url: URL(fileURLWithPath: "/Users/me/docs"))`.
+    /// A symlink to a folder counts as a folder: `isDirectoryKey` describes
+    /// the link itself unless the link is resolved first.
     init(url: URL) {
         let standardized = url.standardizedFileURL
         path = standardized.path
-        isFolder = (try? standardized.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
+        let target = standardized.resolvingSymlinksInPath()
+        isFolder = (try? target.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
     }
 
     init(path: String, isFolder: Bool) {

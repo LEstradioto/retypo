@@ -69,4 +69,54 @@ final class LegacyDataMigrationTests: XCTestCase {
         XCTAssertEqual(try String(contentsOf: current.appendingPathComponent("modes.json"), encoding: .utf8), "current")
         XCTAssertEqual(try String(contentsOf: legacy.appendingPathComponent("modes.json"), encoding: .utf8), "legacy")
     }
+
+    private func writeCurrentFile(_ name: String, _ contents: String) throws {
+        try fileManager.createDirectory(at: current, withIntermediateDirectories: true)
+        try contents.write(to: current.appendingPathComponent(name), atomically: true, encoding: .utf8)
+    }
+
+    private func read(_ directory: URL, _ name: String) throws -> String {
+        try String(contentsOf: directory.appendingPathComponent(name), encoding: .utf8)
+    }
+
+    /// A stray `~/.retypo` (test artifacts, never used by the app) must not
+    /// hide the user's real data: the old copies win, the stray ones are
+    /// kept aside, and the old path becomes the link.
+    func testUnusedCurrentDirectoryDoesNotHideTheUsersData() throws {
+        try writeLegacyFile("settings.json", "{\"user\":true}")
+        try writeLegacyFile("modes.json", "user modes")
+        try writeLegacyFile(".env", "KEY=1")
+        try writeCurrentFile("modes.json", "default modes")
+        XCTAssertEqual(try LegacyDataMigration.run(home: home), .merged)
+        XCTAssertEqual(try read(current, "modes.json"), "user modes")
+        XCTAssertEqual(try read(current, ".env"), "KEY=1")
+        XCTAssertEqual(try read(current.appendingPathComponent("pre-migration"), "modes.json"), "default modes")
+        XCTAssertNotNil(try? fileManager.destinationOfSymbolicLink(atPath: legacy.path))
+    }
+
+    /// Once the app has run on `~/.retypo`, its files win; only what the old
+    /// directory alone has is brought over.
+    func testCurrentDirectoryInUseOnlyGainsMissingFiles() throws {
+        try writeLegacyFile("modes.json", "old modes")
+        try writeLegacyFile("history.json", "old history")
+        try writeCurrentFile("settings.json", "{}")
+        try writeCurrentFile("modes.json", "new modes")
+        XCTAssertEqual(try LegacyDataMigration.run(home: home), .merged)
+        XCTAssertEqual(try read(current, "modes.json"), "new modes")
+        XCTAssertEqual(try read(current, "history.json"), "old history")
+        XCTAssertEqual(try read(legacy, "modes.json"), "old modes")
+        XCTAssertEqual(try LegacyDataMigration.run(home: home), .alreadyMigrated, "nothing left to move")
+    }
+
+    /// `~/.retypo-air` as the user's own link into a dotfiles folder: point
+    /// `~/.retypo` there too instead of starting over.
+    func testUsersOwnLegacyLinkIsFollowed() throws {
+        let synced = home.appendingPathComponent("dotfiles/retypo", isDirectory: true)
+        try fileManager.createDirectory(at: synced, withIntermediateDirectories: true)
+        try "synced modes".write(to: synced.appendingPathComponent("modes.json"), atomically: true, encoding: .utf8)
+        try fileManager.createSymbolicLink(at: legacy, withDestinationURL: synced)
+        XCTAssertEqual(try LegacyDataMigration.run(home: home), .linked)
+        XCTAssertEqual(try read(current, "modes.json"), "synced modes")
+        XCTAssertEqual(try LegacyDataMigration.run(home: home), .alreadyMigrated)
+    }
 }

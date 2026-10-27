@@ -34,18 +34,31 @@ struct EnhancedRunner {
 
     func run(_ request: LLMRequest, enhancement: ModeEnhancement, onProgress: @escaping (AgentProgress) async -> Void) async throws -> LLMResponse {
         let plan = await Task.detached { ReferencePlanner.plan(for: enhancement.sources) }.value
-        let route = EnhancedRoute.pick(provider: request.provider, plan: plan, webSearch: enhancement.webSearch)
-        let brief = ResearchBrief(plan: plan, webSearch: enhancement.webSearch, readsWithOwnTools: route == .cliTools)
-        var request = request
-        request.system = EnhancedPrompt.system(base: request.system, brief: brief)
-        switch route {
-        case .singleRequest: return try await router.complete(request)
-        case .cliTools:
-            request.research = CLIResearchAccess(plan: plan, webSearch: enhancement.webSearch)
-            return try await router.complete(request)
-        case .anthropicTools: return try await anthropicLoop(request, brief: brief, onProgress: onProgress)
+        let brief = ResearchBrief(plan: plan, webSearch: enhancement.webSearch)
+        switch EnhancedRoute.pick(provider: request.provider, plan: plan, webSearch: enhancement.webSearch) {
+        case .singleRequest: return try await router.complete(Self.prompted(request, brief))
+        case .cliTools: return try await cliRun(request, brief: brief)
+        case .anthropicTools: return try await anthropicLoop(Self.prompted(request, brief), brief: brief, onProgress: onProgress)
         case .unavailable(let reason): throw LLMError.enhancedUnavailable(reason)
         }
+    }
+
+    private static func prompted(_ request: LLMRequest, _ brief: ResearchBrief) -> LLMRequest {
+        var request = request
+        request.system = EnhancedPrompt.system(base: request.system, brief: brief)
+        return request
+    }
+
+    /// Claude Code and Codex research with their own tools, started in a
+    /// per-run folder that is removed afterwards.
+    private func cliRun(_ request: LLMRequest, brief: ResearchBrief) async throws -> LLMResponse {
+        let workspace = try CLIResearchWorkspace(plan: brief.plan, webSearch: brief.webSearch)
+        defer { workspace.remove() }
+        var cliBrief = brief
+        cliBrief.cliPaths = workspace.paths
+        var request = Self.prompted(request, cliBrief)
+        request.research = workspace.access
+        return try await router.complete(request)
     }
 
     private func anthropicLoop(_ request: LLMRequest, brief: ResearchBrief, onProgress: @escaping (AgentProgress) async -> Void) async throws -> LLMResponse {

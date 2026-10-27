@@ -22,11 +22,12 @@ struct ToolCall {
         return trimmed.isEmpty ? nil : trimmed
     }
 
-    /// Models send line numbers as JSON integers, floats or strings.
+    /// Models send line numbers as JSON integers, floats or strings. A float
+    /// outside Int's range (`1e20`) reads as missing: `Int(_:)` would trap.
     func integer(_ key: String) -> Int? {
         switch arguments[key] {
         case let value as Int: return value
-        case let value as Double: return Int(value)
+        case let value as Double: return Int(exactly: value.rounded())
         case let value as String: return Int(value)
         default: return nil
         }

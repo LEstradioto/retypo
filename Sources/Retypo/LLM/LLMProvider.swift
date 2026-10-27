@@ -69,25 +69,19 @@ struct LLMRequest {
 /// What an enhanced run opens up on a CLI provider. Claude Code and Codex
 /// bring their own read, search and web tools; Retypo only allows them.
 struct CLIResearchAccess: Equatable {
-    /// Attached folders, plus the folder of each attached file, because
-    /// Claude Code grants read access per directory.
+    /// Attached folders, granted with `--add-dir`.
     var folders: [String]
+    /// The folder the CLI starts in, holding copies of the attached single
+    /// files (see `CLIResearchWorkspace`). nil: a fresh empty folder.
+    var workspace: URL?
     var webSearch: Bool
 
-    init(folders: [String], webSearch: Bool) {
-        self.folders = folders
-        self.webSearch = webSearch
-    }
+    var readsFiles: Bool { !folders.isEmpty || workspace != nil }
 
-    init(plan: ReferencePlan, webSearch: Bool) {
-        var folders: [String] = []
-        if case .onDemand(let roots, _) = plan {
-            for root in roots {
-                let folder = root.isFolder ? root.url.path : root.url.deletingLastPathComponent().path
-                if !folders.contains(folder) { folders.append(folder) }
-            }
-        }
-        self.init(folders: folders, webSearch: webSearch)
+    init(folders: [String], workspace: URL? = nil, webSearch: Bool) {
+        self.folders = folders
+        self.workspace = workspace
+        self.webSearch = webSearch
     }
 }
 

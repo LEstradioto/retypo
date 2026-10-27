@@ -66,6 +66,15 @@ final class LiveEnhancedSmokeTests: XCTestCase {
         XCTAssertTrue(response.text.contains("9"))
     }
 
+    /// A single large file: copied into the run's folder, never granted
+    /// through its parent folder.
+    func testClaudeCodeReadsALargeSingleFile() async throws {
+        let filler = (1...2_500).map { "Linha \($0): política geral sem relação com prazos." }.joined(separator: "\n")
+        try fixture.write("manual.md", filler + "\n# Plano Clínica\n\(fact)\n")
+        let response = try await run(request(.claudeCode, model: "haiku"), ModeEnhancement(sources: [ReferenceSource(url: fixture.url("manual.md"))]))
+        XCTAssertTrue(response.text.contains("9"))
+    }
+
     func testCodexReadsALargeFolderWithWebSearchOn() async throws {
         var enhancement = try largeFolder()
         enhancement.webSearch = true

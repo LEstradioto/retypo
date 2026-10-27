@@ -33,8 +33,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
   characters go whole with every run on any provider; larger sources are
   researched with read-only `list_files` / `search_files` / `read_file`
   tools (Anthropic API), or with Claude Code's and Codex's own read-only
-  tools. Paths are confined to what was attached. Web search costs are added
-  to the cost readout. PDF, Word, RTF and ODT text is extracted.
+  tools. On the Anthropic API every path is confined to what was attached;
+  Claude Code reads only the attached folders and per-run copies of
+  attached files; Codex reads with its read-only sandbox (any file). Web
+  search costs are added to the cost readout. PDF, Word, RTF and ODT text is
+  extracted.
+- Each Claude Code / Codex run starts in its own empty folder instead of the
+  shared temporary directory.
 - Standard editing shortcuts (`Cmd+C/V/X/A/Z`, `Shift+Cmd+Z`) in every text
   field: the mode prompt editor, mode names, Settings and the Freeform prompt.
   The app now has a real Edit menu; only the main editor handled them before.

@@ -44,6 +44,7 @@ enum ReferenceTools {
 
 enum ReferenceToolError: LocalizedError, Equatable {
     case outsideSources(String)
+    case notShared(String)
     case notFound(String)
     case unreadable(String)
     case isFolder(String)
@@ -54,6 +55,7 @@ enum ReferenceToolError: LocalizedError, Equatable {
     var errorDescription: String? {
         switch self {
         case .outsideSources(let path): "\"\(path)\" is outside the attached sources. Use a path as shown by list_files, such as \"docs/notes.md\"."
+        case .notShared(let path): "\"\(path)\" is hidden or inside a dependency folder; only files listed by list_files are shared."
         case .notFound(let path): "\"\(path)\" does not exist in the attached sources. Call list_files to see the available paths."
         case .unreadable(let path): "\"\(path)\" has no readable text (binary or empty)."
         case .isFolder(let path): "\"\(path)\" is a folder. Call list_files with this path to see its files."

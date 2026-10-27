@@ -25,8 +25,12 @@ fi
 for app_id in app.retypo.dev app.retypoair.dev; do
   osascript -e "if application id \"$app_id\" is running then tell application id \"$app_id\" to quit" >/dev/null 2>&1 || true
 done
-pkill -f '/Retypo($| )' >/dev/null 2>&1 || true
-pkill -f '/RetypoAir($| )' >/dev/null 2>&1 || true
+# Match the app binaries only, not any command line ending in /Retypo
+# (an editor opened on Sources/Retypo, for one).
+for binary in Retypo RetypoAir; do
+  pkill -f "Contents/MacOS/${binary}(\$| )" >/dev/null 2>&1 || true
+  pkill -f "/\.build/.*/${binary}(\$| )" >/dev/null 2>&1 || true
+done
 pkill -f 'swift run.*Retypo' >/dev/null 2>&1 || true
 
 cd "$APP_DIR"

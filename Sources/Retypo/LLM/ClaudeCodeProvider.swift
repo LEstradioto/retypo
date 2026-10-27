@@ -17,7 +17,7 @@ final class ClaudeCodeProvider: LLMProviderClient {
     }
 
     func complete(_ request: LLMRequest, apiKey: String) async throws -> LLMResponse {
-        let result = try await CLIProcessRunner.run(tool, arguments: arguments(for: request))
+        let result = try await CLIProcessRunner.run(tool, arguments: arguments(for: request), workingDirectory: request.research?.workspace)
         return try ClaudeCodeOutput.parse(result, tool: tool)
     }
 
@@ -50,28 +50,32 @@ final class ClaudeCodeProvider: LLMProviderClient {
 }
 
 /// Which Claude Code tools a run may use. A plain run gets none; an
-/// enhanced run may read the attached folders and, when its mode allows,
-/// search the web. Nothing ever writes, edits or runs commands.
+/// enhanced run may read the attached sources and, when its mode allows,
+/// search the web. Nothing ever writes, edits, runs commands or fetches URLs.
 enum ClaudeCodeTools {
     static let readTools = ["Read", "Grep", "Glob"]
-    static let webTools = ["WebSearch", "WebFetch"]
-    static let neverAllowed = ["Bash", "Edit", "Write", "Task"]
+    /// WebFetch stays off: a planted instruction could send what the model
+    /// read to any URL. Search results still arrive as snippets.
+    static let neverAllowed = ["Bash", "Edit", "Write", "Task", "WebFetch"]
     static let researchTurns = "12"
 
+    /// Only WebSearch is ever allow-listed. A bare `Read` rule approves reads
+    /// anywhere on disk; left unnamed, the read tools stay limited to the
+    /// working directory and the `--add-dir` folders, and the CLI denies the rest.
     static func allowed(for research: CLIResearchAccess?) -> [String] {
-        guard let research else { return [] }
-        return (research.folders.isEmpty ? [] : readTools) + (research.webSearch ? webTools : [])
+        research?.webSearch == true ? ["WebSearch"] : []
     }
 
     static func disallowed(for research: CLIResearchAccess?) -> String {
-        let allowed = Set(allowed(for: research))
-        return (neverAllowed + readTools + webTools).filter { !allowed.contains($0) }.joined(separator: " ")
+        let reads = research?.readsFiles == true ? [] : readTools
+        let web = research?.webSearch == true ? [] : ["WebSearch"]
+        return (neverAllowed + reads + web).joined(separator: " ")
     }
 
     /// `--add-dir` takes several values, so it goes after every flag whose
     /// value could be mistaken for a directory.
     static func researchArguments(_ research: CLIResearchAccess) -> [String] {
-        let tools = ["--allowed-tools", allowed(for: research).joined(separator: " ")]
+        let tools = research.webSearch ? ["--allowed-tools", allowed(for: research).joined(separator: " ")] : []
         return research.folders.isEmpty ? tools : tools + ["--add-dir"] + research.folders
     }
 }

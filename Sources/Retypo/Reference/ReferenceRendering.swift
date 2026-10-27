@@ -67,16 +67,23 @@ enum ReferenceSearch {
 
 /// `read_file`: numbered lines from a window of the file.
 enum ReferenceExcerpt {
+    /// A minified JSON or SVG is one multi-megabyte line; cut it, or a
+    /// single read overflows the next request's context.
+    static let lineCharacterLimit = 2_000
+
     struct Window: Equatable {
+        /// No file has more lines; clamping first keeps the sums below Int.max.
+        static let lastLine = 1_000_000_000
+
         let first: Int
         let last: Int
 
         /// Lines are 1-based; a missing or inverted end reads `lineLimit` lines.
         init(start: Int?, end: Int?, lineLimit: Int) {
-            let first = max(1, start ?? 1)
-            let requested = end.map { max($0, first) } ?? first + lineLimit - 1
+            let first = min(max(1, start ?? 1), Self.lastLine)
+            let windowEnd = first + lineLimit - 1
             self.first = first
-            last = min(requested, first + lineLimit - 1)
+            last = min(end.map { max($0, first) } ?? windowEnd, windowEnd)
         }
     }
 
@@ -85,14 +92,19 @@ enum ReferenceExcerpt {
         guard window.first <= lines.count else { return "\(path) has \(lines.count) lines; start_line \(window.first) is past the end." }
         var body: [String] = []
         var characters = 0
-        var lastShown = window.first - 1
-        for number in window.first...min(window.last, lines.count) where characters < characterLimit {
-            let line = "\(number): \(lines[number - 1])"
+        for number in window.first...min(window.last, lines.count) {
+            let line = "\(number): \(clipped(lines[number - 1]))"
+            if characters + line.count > characterLimit, !body.isEmpty { break }
             characters += line.count
             body.append(line)
-            lastShown = number
         }
+        let lastShown = window.first + body.count - 1
         return ([header(path, window.first, lastShown, lines.count)] + body + footer(lastShown, lines.count)).joined(separator: "\n")
+    }
+
+    private static func clipped(_ line: Substring) -> String {
+        guard line.count > lineCharacterLimit else { return String(line) }
+        return "\(line.prefix(lineCharacterLimit)) …[\(line.count - lineCharacterLimit) more characters]"
     }
 
     private static func header(_ path: String, _ first: Int, _ last: Int, _ count: Int) -> String {

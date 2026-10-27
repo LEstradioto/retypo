@@ -105,7 +105,13 @@ Retypo picks how the material reaches the model from its size, the way Claude Pr
 
 The mode editor shows which row applies ("sent in full · 3 files · 12k chars" or "searched on demand · 1,240 files") and warns when the selected provider can't run the mode. Enhanced modes carry a ✦ on their pill. The status line follows the research: *Thinking…*, *Searching "reembolso"*, *Reading kb/planos/clinica.md*.
 
-The research loop is deliberately small: read-only tools, a bounded number of rounds, and only the final text comes back to the editor. Every path the model sends is resolved (symlinks and `..` included) and refused if it lands outside what you attached. Attached text and web pages are presented to the model as reference data, not instructions. Claude Code gets `Read`, `Grep` and `Glob` on the attached folders (for a single attached file, its folder) and nothing that writes; Codex keeps its read-only sandbox.
+The research loop is deliberately small: read-only tools, a bounded number of rounds, and only the final text comes back to the editor. Attached text and web pages are presented to the model as reference data, not instructions. What the model can reach depends on the provider:
+
+- **Anthropic API:** only what you attached. Every path the model sends is resolved (symlinks and `..` included) and refused outside the attached sources; hidden files (`.env`) and dependency folders are refused even by exact path, unless you attached that file by name.
+- **Claude Code:** the attached folders (`--add-dir`) and a fresh per-run folder holding copies of attached single files. The read tools are never allow-listed, because a bare `Read` rule approves reads anywhere; Claude Code denies reads outside those folders. Nothing writes, runs commands or fetches URLs (`WebFetch` stays off; `WebSearch` only when the mode searches the web).
+- **Codex:** its read-only sandbox, which can read any file your user can. Prefer Anthropic or Claude Code for material you don't trust, especially with web search on.
+
+Running an old Retypo Air build after enhancing a mode drops that mode's Enhanced settings the next time the old build saves its modes.
 
 Measured on Claude Haiku 5.5 (live smoke tests, `Tests/RetypoTests/LiveEnhancedSmokeTests.swift`): small documents sent whole, 1.8s; a ~120k-character folder searched in 2 rounds, 5.6s and ~7k input tokens; one web search, 6s. Haiku 5.5 thinks adaptively by default, which is the "thinking" in the loop. Claude Code (haiku) took 6.8s and Codex 13.7s on the same folder.
 

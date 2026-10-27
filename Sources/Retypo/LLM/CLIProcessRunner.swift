@@ -27,9 +27,13 @@ enum CLIProcessRunner {
     private static let scrubbedKeys = ProviderKind.allCases.compactMap(\.apiKeyEnvironmentName)
         + ["ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_BASE_URL", "OPENAI_BASE_URL"]
 
-    static func run(_ tool: String, arguments: [String], timeout: TimeInterval = 180) async throws -> CLIResult {
+    /// `workingDirectory` is where the CLI starts and what its tools may read
+    /// without asking; nil gives every run a fresh, empty one.
+    static func run(_ tool: String, arguments: [String], timeout: TimeInterval = 180, workingDirectory: URL? = nil) async throws -> CLIResult {
         guard let executable = CLIExecutableLocator.find(tool) else { throw LLMError.cliNotFound(tool) }
-        let process = makeProcess(executable: executable, arguments: arguments)
+        let scratch = workingDirectory == nil ? try makeScratchDirectory() : nil
+        defer { if let scratch { try? FileManager.default.removeItem(at: scratch) } }
+        let process = makeProcess(executable: executable, arguments: arguments, directory: workingDirectory ?? scratch)
         let output = Pipe()
         let errors = Pipe()
         process.standardOutput = output
@@ -42,15 +46,23 @@ enum CLIProcessRunner {
         return CLIResult(standardOutput: await stdout, standardError: await stderr, exitCode: process.terminationStatus)
     }
 
-    private static func makeProcess(executable: URL, arguments: [String]) -> Process {
+    private static func makeProcess(executable: URL, arguments: [String], directory: URL?) -> Process {
         let process = Process()
         process.executableURL = executable
         process.arguments = arguments
         // A scratch directory keeps the CLI from picking up the project it
         // happens to be launched next to (CLAUDE.md, AGENTS.md, git state).
-        process.currentDirectoryURL = FileManager.default.temporaryDirectory
+        process.currentDirectoryURL = directory ?? FileManager.default.temporaryDirectory
         process.environment = childEnvironment()
         return process
+    }
+
+    /// One empty folder per run. The shared temporary directory holds other
+    /// apps' files, and a CLI's tools read its working directory unasked.
+    private static func makeScratchDirectory() throws -> URL {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("retypo-cli-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        return url
     }
 
     /// A GUI app's `PATH` is `/usr/bin:/bin:/usr/sbin:/sbin`. The CLIs are

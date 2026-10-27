@@ -19,7 +19,17 @@ enum ReferencePaths {
         guard let candidate, let root = containingRoot(of: candidate, in: roots) else {
             throw ReferenceToolError.outsideSources(raw)
         }
+        guard !isHidden(candidate, below: root) else { throw ReferenceToolError.notShared(raw) }
         return ResolvedReference(root: root, url: candidate)
+    }
+
+    /// What `list_files` leaves out stays out of reach too: dotfiles such as
+    /// `.env` inside an attached project, and dependency folders. A hidden
+    /// file the user attached by name is the root itself, so it stays readable.
+    static func isHidden(_ url: URL, below root: ReferenceRoot) -> Bool {
+        guard root.isFolder, url.path.count > root.url.path.count else { return false }
+        let relative = url.path.dropFirst(root.url.path.count + 1).split(separator: "/")
+        return relative.contains { $0.hasPrefix(".") || ReferenceCatalog.skippedFolders.contains(String($0)) }
     }
 
     static func containingRoot(of url: URL, in roots: [ReferenceRoot]) -> ReferenceRoot? {

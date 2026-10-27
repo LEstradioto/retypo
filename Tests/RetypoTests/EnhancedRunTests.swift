@@ -33,8 +33,8 @@ final class EnhancedRunTests: XCTestCase {
 
     // MARK: Prompt
 
-    private func prompt(_ plan: ReferencePlan, web: Bool = false, ownTools: Bool = false) -> String {
-        let brief = ResearchBrief(plan: plan, webSearch: web, readsWithOwnTools: ownTools)
+    private func prompt(_ plan: ReferencePlan, web: Bool = false, cliPaths: [String: String]? = nil) -> String {
+        let brief = ResearchBrief(plan: plan, webSearch: web, cliPaths: cliPaths)
         return EnhancedPrompt.system(base: "BASE", brief: brief, today: Date(timeIntervalSince1970: 1_793_059_200))
     }
 
@@ -49,7 +49,8 @@ final class EnhancedRunTests: XCTestCase {
     func testOnDemandSourcesUseLabelsForTheToolsAndRealPathsForCLIs() {
         XCTAssertTrue(prompt(onDemand).contains("- docs/ (folder)\n- glossary.md (file)"))
         XCTAssertTrue(prompt(onDemand).contains("list_files, search_files and read_file"))
-        XCTAssertTrue(prompt(onDemand, ownTools: true).contains("- /Users/me/docs/ (folder)"))
+        let cliPaths = ["docs": "/Users/me/docs", "glossary.md": "/tmp/run/glossary.md"]
+        XCTAssertTrue(prompt(onDemand, cliPaths: cliPaths).contains("- /Users/me/docs/ (folder)\n- /tmp/run/glossary.md (file)"))
     }
 
     func testWebSearchGivesTodaysDate() {
@@ -59,10 +60,28 @@ final class EnhancedRunTests: XCTestCase {
 
     // MARK: CLI flags
 
-    func testCLIAccessOpensFoldersAndTheFolderOfEachFile() {
-        let access = CLIResearchAccess(plan: onDemand, webSearch: true)
-        XCTAssertEqual(access.folders, ["/Users/me/docs", "/Users/me/notes"])
-        XCTAssertEqual(CLIResearchAccess(plan: inline, webSearch: false).folders, [])
+    /// Single files are copied into the run's folder instead of granting
+    /// the folder they sit in; folders are granted as they are.
+    func testCLIWorkspaceCopiesSingleFilesAndGrantsOnlyAttachedFolders() throws {
+        let fixture = try ReferenceFixture()
+        defer { fixture.remove() }
+        try fixture.write("notes/glossary.md", "Glosa")
+        try fixture.write("notes/private.md", "not attached")
+        try fixture.write("kb/a.md", "a")
+        let plan = ReferencePlan.onDemand(roots: fixture.roots(["kb", "notes/glossary.md"]), fileCount: 2)
+        let workspace = try CLIResearchWorkspace(plan: plan, webSearch: false)
+        defer { workspace.remove() }
+        let folder = try XCTUnwrap(workspace.url)
+        XCTAssertEqual(workspace.access.folders, [fixture.url("kb").path])
+        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: folder.path), ["glossary.md"])
+        XCTAssertEqual(workspace.paths["glossary.md"], folder.appendingPathComponent("glossary.md").path)
+        XCTAssertTrue(workspace.access.readsFiles)
+    }
+
+    func testInlinePlansNeedNoWorkspace() throws {
+        let workspace = try CLIResearchWorkspace(plan: inline, webSearch: true)
+        XCTAssertNil(workspace.url)
+        XCTAssertFalse(workspace.access.readsFiles)
     }
 
     private func cliRequest(_ provider: ProviderKind, research: CLIResearchAccess?) -> LLMRequest {
@@ -71,19 +90,28 @@ final class EnhancedRunTests: XCTestCase {
         return request
     }
 
-    func testClaudeCodeResearchReadsAndSearchesButNeverWrites() {
+    /// A bare `Read` allow rule approves reads anywhere on disk (verified
+    /// live), so the read tools are never allow-listed: unnamed, Claude Code
+    /// limits them to the working directory and `--add-dir` folders.
+    func testClaudeCodeResearchNeverAllowListsTheReadTools() {
         let research = CLIResearchAccess(folders: ["/Users/me/docs"], webSearch: true)
         let arguments = ClaudeCodeProvider().arguments(for: cliRequest(.claudeCode, research: research))
         XCTAssertEqual(CLIArguments.value(after: "--max-turns", in: arguments), "12")
-        XCTAssertEqual(CLIArguments.value(after: "--allowed-tools", in: arguments), "Read Grep Glob WebSearch WebFetch")
-        XCTAssertEqual(CLIArguments.value(after: "--disallowed-tools", in: arguments), "Bash Edit Write Task")
+        XCTAssertEqual(CLIArguments.value(after: "--allowed-tools", in: arguments), "WebSearch")
+        XCTAssertEqual(CLIArguments.value(after: "--disallowed-tools", in: arguments), "Bash Edit Write Task WebFetch")
         XCTAssertEqual(CLIArguments.value(after: "--add-dir", in: arguments), "/Users/me/docs")
         XCTAssertEqual(Array(arguments.suffix(2)), ["--model", "haiku"], "--add-dir takes several values, so a flag must end it")
     }
 
+    func testClaudeCodeWebOnlyResearchKeepsTheReadToolsOff() {
+        let arguments = ClaudeCodeProvider().arguments(for: cliRequest(.claudeCode, research: CLIResearchAccess(folders: [], webSearch: true)))
+        XCTAssertEqual(CLIArguments.value(after: "--disallowed-tools", in: arguments), "Bash Edit Write Task WebFetch Read Grep Glob")
+        XCTAssertFalse(arguments.contains("--add-dir"))
+    }
+
     func testClaudeCodePlainRunKeepsEveryToolOff() {
         let arguments = ClaudeCodeProvider().arguments(for: cliRequest(.claudeCode, research: nil))
-        XCTAssertEqual(CLIArguments.value(after: "--disallowed-tools", in: arguments), "Bash Edit Write Task Read Grep Glob WebSearch WebFetch")
+        XCTAssertEqual(CLIArguments.value(after: "--disallowed-tools", in: arguments), "Bash Edit Write Task WebFetch Read Grep Glob WebSearch")
         XCTAssertFalse(arguments.contains("--add-dir"))
         XCTAssertFalse(arguments.contains("--allowed-tools"))
     }

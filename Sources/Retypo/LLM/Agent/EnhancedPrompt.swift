@@ -20,7 +20,7 @@ enum EnhancedPrompt {
         switch brief.plan {
         case .none: return nil
         case .inline(let documents): return documents.isEmpty ? nil : inlineSection(documents)
-        case .onDemand(let roots, let fileCount): return onDemandSection(roots, fileCount: fileCount, ownTools: brief.readsWithOwnTools)
+        case .onDemand(let roots, let fileCount): return onDemandSection(roots, fileCount: fileCount, cliPaths: brief.cliPaths)
         }
     }
 
@@ -35,11 +35,11 @@ enum EnhancedPrompt {
     }
 
     /// The reference tools take labels; a CLI's own tools take real paths.
-    private static func onDemandSection(_ roots: [ReferenceRoot], fileCount: Int, ownTools: Bool) -> String {
+    private static func onDemandSection(_ roots: [ReferenceRoot], fileCount: Int, cliPaths: [String: String]?) -> String {
         let listing = roots.map { root in
-            "- \(ownTools ? root.url.path : root.label)\(root.isFolder ? "/ (folder)" : " (file)")"
+            "- \(cliPaths?[root.label] ?? root.label)\(root.isFolder ? "/ (folder)" : " (file)")"
         }.joined(separator: "\n")
-        let access = ownTools ? "read-only, with your file reading and search tools" : "readable with list_files, search_files and read_file"
+        let access = cliPaths == nil ? "readable with list_files, search_files and read_file" : "read-only, with your file reading and search tools"
         return """
         Reference sources (\(fileCount) files), \(access):
         \(listing)
@@ -62,6 +62,7 @@ enum EnhancedPrompt {
 struct ResearchBrief {
     let plan: ReferencePlan
     let webSearch: Bool
-    /// Claude Code and Codex read with their own tools, at absolute paths.
-    let readsWithOwnTools: Bool
+    /// Claude Code and Codex read with their own tools, at these absolute
+    /// paths (by label). nil: the reference tools, which take labels.
+    var cliPaths: [String: String]?
 }

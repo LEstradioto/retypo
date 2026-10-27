@@ -17,7 +17,8 @@ final class CodexProvider: LLMProviderClient {
         let messageFile = FileManager.default.temporaryDirectory
             .appendingPathComponent("retypo-codex-\(UUID().uuidString).txt")
         defer { try? FileManager.default.removeItem(at: messageFile) }
-        let result = try await CLIProcessRunner.run(tool, arguments: arguments(for: request, messageFile: messageFile))
+        let arguments = arguments(for: request, messageFile: messageFile)
+        let result = try await CLIProcessRunner.run(tool, arguments: arguments, workingDirectory: request.research?.workspace)
         return try CodexOutput.parse(result, messageFile: messageFile, tool: tool)
     }
 
@@ -30,9 +31,9 @@ final class CodexProvider: LLMProviderClient {
 
     /// The user's config.toml may sit at xhigh effort; a rewrite does not
     /// need it, and low cuts several seconds off every run. Research (an
-    /// enhanced mode) gets medium to plan its searches. The read-only
-    /// sandbox already lets Codex read the paths the prompt lists, so only
-    /// web search has to be switched on.
+    /// enhanced mode) gets medium to plan its searches. Codex's read-only
+    /// sandbox reads any file the user can, so only web search is switched
+    /// on here; it cannot be narrowed to the attached sources.
     static func configOverrides(for research: CLIResearchAccess?) -> [String] {
         let effort = ["-c", "model_reasoning_effort=\"\(research == nil ? "low" : "medium")\""]
         return research?.webSearch == true ? effort + ["-c", "web_search=\"live\""] : effort
