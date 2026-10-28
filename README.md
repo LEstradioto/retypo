@@ -1,6 +1,11 @@
 # Retypo ![Retypo](assets/bubble-128.png) 
 
-![Retypo glass panel docked at the bottom of the screen, showing inline diff highlights over a TextEdit document.](glass-bottom-1-main.webp)
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/hero-dark.webp">
+    <img src="docs/images/hero-light.webp" width="812" alt="The Retypo panel in three steps: a speed-typed draft full of typos; Enter runs Improve Writing, new text tinted green and a red pin where text was cut; Cmd+Shift+D shows every change with removals struck through.">
+  </picture>
+</p>
 
 Tiny macOS floating textbox. Run saved prompts on selected text (from any app or manual input), auto-copy the result.
 
@@ -44,13 +49,14 @@ In Settings, pick a provider and click Refresh to load its models.
 - Selection import from any app.
 - Codex/Claude Code prompt import from terminal windows without manual selection.
 - 13 pre-made prompts. Freeform mode: type the prompt live each run.
-- Auto-copy and auto-correct.
+- Run every enabled mode at once (`Cmd+Shift+Enter`) and pick a result from the cards.
+- Auto-copy.
 - Track changes: new text tinted green, a red pin where text was removed. `Cmd+Shift+D` (or a click on `Δ`) shows the whole diff, removals struck through.
 - History, restorable. Don't lose your drafts.
 - Undo/redo.
 - Whitespace and newlines trimmed off LLM replies.
 - macOS native spellcheck still works underneath.
-- 2 Themes: Glass, Lighter. 
+- Themes: Light, Dark, System, Monokai, Tokyo Night, Catppuccin.
 - Always-on-top.
 - Automatic show on active screen for multi-screen setups.
 - Multi-provider: Groq, Anthropic, OpenAI, OpenRouter — plus Claude Code and Codex via subscription, no API key.
@@ -58,7 +64,6 @@ In Settings, pick a provider and click Refresh to load its models.
 - Enhanced modes: attach files, folders and web search to a mode; it researches before it answers. See [Enhanced modes](#enhanced-modes).
 - Cost tracking: last, session, today. Editable per-model pricing.
 - Footer stats: WPM, number of edits in the last run (`Δ`), char count.
-- Auto-correct skips short text, code fences, shell commands, symbol-heavy lines. So it never rewrites a command you're typing.
 
 ## Subscription providers (Claude Code / Codex)
 
@@ -74,7 +79,7 @@ Worth knowing before you switch:
 | Tokens per call | ~50 | ~11–18k | ~15–16k |
 | Billing | per token | subscription | subscription |
 
-The token overhead is each CLI's own harness context, sent on every call; `claude --bare` would trim it but reads `ANTHROPIC_API_KEY` only, which defeats the purpose. Because of that, **auto-run is forced off while a CLI provider is selected** — the footer shows `Manual` and `Enter` runs the mode. Use these for the heavy modes and keep an API provider for auto-correct.
+The token overhead is each CLI's own harness context, sent on every call; `claude --bare` would trim it but reads `ANTHROPIC_API_KEY` only, which defeats the purpose. Because of that, use them for the heavy modes and keep an API provider for quick edits.
 
 Failures come back with the CLI's own message in the status bar (click it to copy). A transient `Not logged in · Please run /login` right after the CLI rotates its token is one of those — just run again.
 
@@ -86,7 +91,23 @@ A mode is a saved system prompt. **Freeform** is special: type the prompt live e
 
 Built-in: Correct, Typos & Grammar, Improve Writing, Translate, Simplify, Summarize, Bullets, Better way of saying, Make this Tweet Fit, Generate 3 variations, How to respond 3 ways, Caveman, **Freeform**.
 
-Press `Cmd+D`, then click the pencil on a mode card to rename it or edit its prompt in place. Drag the corner grip of the prompt box to resize it; the standard editing shortcuts work there and in every other field. Changes save automatically; built-in modes also offer **Reset default**. Edit, disable, and shortcut-bind modes in Settings. Stored in `~/.retypo/modes.json`.
+Press `Cmd+D` to open the mode picker: the arrows move between modes, `Enter` runs one, `Esc` closes it. Below the pills you can add a mode, delete one, record its shortcut, or click the pencil to rename the selected mode and edit its prompt in place. Drag the corner grip of the prompt box to resize it; the standard editing shortcuts work there and in every other field. Changes save automatically; built-in modes also offer **Reset default**. Stored in `~/.retypo/modes.json`.
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/modes-dark.webp">
+    <img src="docs/images/modes-light.webp" width="812" alt="The Cmd+D mode picker: a row of mode pills with Improve Writing selected and an enhanced mode marked with a sparkle, plus add, edit, delete and a recorded shortcut.">
+  </picture>
+</p>
+
+`Cmd+Shift+Enter` runs every enabled mode against the draft. Each result comes back as a card with its changes marked; `Tab` selects and copies one, **Apply** writes it back to the editor.
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/candidates-dark.webp">
+    <img src="docs/images/candidates-light.webp" width="882" alt="Three candidate cards for one short message: Correct, Improve Writing and Simplify, each with its removals struck through and additions tinted green.">
+  </picture>
+</p>
 
 ## Enhanced modes
 
@@ -104,6 +125,13 @@ Retypo picks how the material reaches the model from its size, the way Claude Pr
 | Web search on | Anthropic's server-side search (max 5 per run, $10 per 1,000 searches, added to the cost readout); Claude Code's `WebSearch` | Anthropic, Claude Code |
 
 The mode editor shows which row applies ("sent in full · 3 files · 12k chars" or "searched on demand · 1,240 files") and warns when the selected provider can't run the mode. Enhanced modes carry a ✦ on their pill. The status line follows the research: *Thinking…*, *Searching "reembolso"*, *Reading kb/planos/clinica.md*.
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/enhanced-dark.webp">
+    <img src="docs/images/enhanced-light.webp" width="612" alt="The mode editor for an enhanced mode: its prompt, the Enhanced switch, a docs folder and a price list attached, Search the web ticked, and the line sent in full, 4 files, 351 chars, web search on.">
+  </picture>
+</p>
 
 The research loop is deliberately small: read-only tools, a bounded number of rounds, and only the final text comes back to the editor. Attached text and web pages are presented to the model as reference data, not instructions. What the model can reach depends on the provider:
 
@@ -140,7 +168,7 @@ the editor, including imports received while the editor is empty. Failures:
 | `Enter` | Run current mode, auto-copy |
 | `Shift+Enter` | New line |
 | `Esc` | Hide panel (or leave the track-changes view) |
-| `Cmd+D` | Toggle Candidates overlay |
+| `Cmd+D` | Show/hide the mode picker |
 | `Cmd+Shift+D` | Show what the last run changed (track changes); `Esc` or any key returns |
 | `Cmd+S` | Toggle Settings |
 | `Ctrl+Tab` | Cycle focus: editor, footer |
@@ -173,9 +201,10 @@ the editor, including imports received while the editor is empty. Failures:
 Pre-push hook runs `bin/quality`: SwiftLint, Periphery, tests, coverage. All ratcheted from `quality_thresholds.json`. See `QUALITY.md`.
 
 ```bash
-bin/quality          # run all gates
-bin/quality-bump     # ratchet baseline lower after improvements
-swift test           # tests only
+bin/quality             # run all gates
+bin/quality-bump        # ratchet baseline lower after improvements
+swift test              # tests only
+scripts/readme-shots.sh # redraw the README images from the real UI (brew install imagemagick webp)
 ```
 
 ## License
