@@ -22,24 +22,29 @@ struct TextDiff: Hashable {
 
     static let none = TextDiff(original: "", revised: "")
 
+    /// For reading both versions (the review, the run-all cards): words two
+    /// replacements share are folded into them.
     let segments: [Segment]
+    /// For the editor, which shows only the revision: built from the exact
+    /// edits, so a kept word is never tinted and every removal gets a pin.
     let marks: ChangeMarks
     /// The text the marks describe: once the editor holds anything else,
     /// they point at the wrong characters.
     let revised: String
 
     init(original: String, revised: String) {
-        segments = Self.segments(original: original, revised: revised)
-        marks = ChangeMarks(segments)
+        let exact = Self.exactSegments(original: original, revised: revised)
+        segments = DiffCleanup.absorbChaff(exact)
+        marks = ChangeMarks(exact)
         self.revised = revised
     }
 
-    /// Separate places that changed; a replacement counts once.
-    var editCount: Int { segments.filter(\.isEdit).count }
+    /// Places the editor marks; a replacement counts once.
+    var editCount: Int { marks.added.count + marks.removals.count }
 
     var hasEdits: Bool { segments.contains(where: \.isEdit) }
 
-    private static func segments(original: String, revised: String) -> [Segment] {
+    private static func exactSegments(original: String, revised: String) -> [Segment] {
         guard original != revised else { return revised.isEmpty ? [] : [.kept(revised)] }
         let old = DiffTokens(original)
         let new = DiffTokens(revised)
@@ -47,7 +52,7 @@ struct TextDiff: Hashable {
         let oldIDs = interner.ids(for: old.tokens)
         let newIDs = interner.ids(for: new.tokens)
         let steps = DiffAlignment.steps(oldIDs, newIDs)
-        return DiffCleanup.tidy(DiffSegmentBuilder.segments(steps: steps, old: old, new: new))
+        return DiffCleanup.settleEdges(DiffSegmentBuilder.segments(steps: steps, old: old, new: new))
     }
 }
 

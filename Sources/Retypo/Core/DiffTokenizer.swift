@@ -70,10 +70,20 @@ struct DiffTokenInterner {
 
     mutating func ids(for pieces: [String]) -> [Int] {
         pieces.map { piece in
-            if let known = numbers[piece] { return known }
+            let key = Self.matchKey(piece)
+            if let known = numbers[key] { return known }
             let next = numbers.count
-            numbers[piece] = next
+            numbers[key] = next
             return next
         }
+    }
+
+    /// CRLF, CR and the Unicode line separators match a plain LF: a draft
+    /// pasted with Windows or classic Mac line ends against an LF reply
+    /// would otherwise turn every paragraph break into an edit. Kept text
+    /// comes from the revision, so the marks still index its own breaks.
+    static func matchKey(_ piece: String) -> String {
+        guard piece.contains(where: \.isNewline) else { return piece }
+        return String(piece.map { $0.isNewline ? "\n" : $0 })
     }
 }

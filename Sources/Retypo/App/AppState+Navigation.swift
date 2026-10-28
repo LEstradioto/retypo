@@ -110,9 +110,11 @@ extension AppState {
     func restoreSelectedCandidateToEditor() {
         guard candidateResults.indices.contains(selectedCandidateIndex) else { return }
         pushEditorUndoSnapshot()
-        let candidate = candidateResults[selectedCandidateIndex]
-        showChanges(candidate.changes)
-        inputText = candidate.output
+        // Against the editor as it is now, not the draft run-all started
+        // from: edits made since are replaced too, and should show.
+        let output = candidateResults[selectedCandidateIndex].output
+        showChanges(TextDiff(original: inputText, revised: output))
+        inputText = output
         draftPersistence.save(inputText)
         setCandidateOverlayVisible(false)
         status = "Applied candidate"

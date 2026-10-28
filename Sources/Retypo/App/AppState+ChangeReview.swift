@@ -14,15 +14,27 @@ extension AppState {
         isReviewingChanges = false
     }
 
-    /// Called on every editor write: typing, undo, restore or import.
-    func dropStaleChanges() {
-        guard inlineChanges.hasEdits, inputText != inlineChanges.revised else { return }
-        inlineChanges = .none
+    /// The last run's changes while the editor holds its result. Typing
+    /// hides them; undoing back to the result shows them again.
+    var visibleChanges: TextDiff {
+        inputText == inlineChanges.revised ? inlineChanges : .none
+    }
+
+    /// Called on every editor write: anything but the result ends the review.
+    func closeReviewIfEdited() {
+        guard isReviewingChanges, inputText != inlineChanges.revised else { return }
         isReviewingChanges = false
     }
 
     func toggleChangeReview() {
-        isReviewingChanges = !isReviewingChanges && inlineChanges.hasEdits
+        isReviewingChanges = !isReviewingChanges && visibleChanges.hasEdits
+    }
+
+    /// Return while reviewing goes back to editing instead of running the
+    /// mode again on the result, a paid call nobody asked for.
+    func submitFromEditor() async {
+        guard !isReviewingChanges else { return closeChangeReview() }
+        await runCurrentAction(source: "enter")
     }
 
     func closeChangeReview() {

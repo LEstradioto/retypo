@@ -55,11 +55,52 @@ final class TextDiffTests: XCTestCase {
                        [.edit(removed: "que poderá ser recuperado", added: "envolvido nas glosas")])
     }
 
-    /// A word both rewrites happen to share ("o") would split the edit in
-    /// two; shorter than both sides, it joins them.
-    func testShortStretchesBetweenEditsJoinThem() {
-        XCTAssertEqual(edits("vamos ver o resultado amanhã", "quero checar o relatório hoje"),
-                       [.edit(removed: "vamos ver o resultado amanhã", added: "quero checar o relatório hoje")])
+    /// A word two replacements happen to share ("o") would split the review
+    /// in two; shorter than both sides, it joins them there. The editor
+    /// still tints only what is new.
+    func testShortStretchesBetweenReplacementsJoinThem() {
+        let diff = TextDiff(original: "vamos ver o resultado amanhã", revised: "quero checar o relatório hoje")
+        XCTAssertEqual(diff.segments, [.edit(removed: "vamos ver o resultado amanhã", added: "quero checar o relatório hoje")])
+        XCTAssertEqual(tinted(diff), ["quero checar", "relatório hoje"])
+    }
+
+    /// Joining around a word kept between two removals tinted that word and
+    /// lost both pins: "I" below was never changed.
+    func testAWordKeptBetweenRemovalsStaysKept() {
+        let diff = TextDiff(original: "Basically, I just wanted to say thanks", revised: "I wanted to say thanks")
+        XCTAssertEqual(diff.segments.filter(\.isEdit), [.edit(removed: "Basically, ", added: ""), .edit(removed: " just", added: "")])
+        XCTAssertEqual(diff.marks.removals, [0, 1])
+        XCTAssertEqual(diff.marks.added, [])
+        XCTAssertEqual(tinted(TextDiff(original: "Eu fui", revised: "Eu também fui lá ontem")), ["também", "lá ontem"])
+    }
+
+    /// A draft with Windows or classic Mac line ends against an LF reply.
+    func testLineEndingStylesAreNotEdits() {
+        let reply = "Primeiro parágrafo.\n\nSegundo parágrafo."
+        XCTAssertEqual(TextDiff(original: "Primeiro parágrafo.\r\n\r\nSegundo paragrafo.", revised: reply).editCount, 1)
+        XCTAssertEqual(TextDiff(original: "Primeiro parágrafo.\r\rSegundo paragrafo.", revised: reply).editCount, 1)
+    }
+
+    /// Rebuilding a String from reversed characters fused LF + CR into CRLF
+    /// and pushed every later mark one unit right.
+    func testLineFeedThenCarriageReturnKeepsMarksInPlace() {
+        let diff = TextDiff(original: "a \n\rb", revised: "c\n\rb")
+        XCTAssertEqual(Array(rebuilt(diff).utf16), Array("c\n\rb".utf16))
+    }
+
+    /// Random texts mixing the inputs that trip offset math: CRLF, lone CR,
+    /// combining marks, emoji with modifiers, CJK, NBSP.
+    func testRandomTextsRebuildTheRevisionAndMarkInsideIt() {
+        let atoms = ["a", "b", "cat", "é", "e\u{301}", "👍🏽", "日本", ",", ".", " ", "  ", "\u{00A0}", "\n", "\r", "\r\n", "\n\n", "\t"]
+        var generator = SeededGenerator(seed: 7)
+        for _ in 0 ..< 3_000 {
+            let original = (0 ..< Int.random(in: 0 ... 12, using: &generator)).map { _ in atoms.randomElement(using: &generator) ?? "" }.joined()
+            let revised = (0 ..< Int.random(in: 0 ... 12, using: &generator)).map { _ in atoms.randomElement(using: &generator) ?? "" }.joined()
+            let diff = TextDiff(original: original, revised: revised)
+            XCTAssertEqual(Array(rebuilt(diff).utf16), Array(revised.utf16), "\(original.debugDescription) → \(revised.debugDescription)")
+            let length = (revised as NSString).length
+            XCTAssertTrue(diff.marks.added.allSatisfy { NSMaxRange($0) <= length } && diff.marks.removals.allSatisfy { $0 <= length })
+        }
     }
 
     /// Aligning spaces as tokens once kept a space instead of the word.
@@ -119,14 +160,17 @@ final class TextDiffTests: XCTestCase {
         XCTAssertEqual(diff.revised, revised)
     }
 
-    func testKeptAndAddedTextRebuildTheRevision() {
-        let diff = TextDiff(original: "Uma frase, com vírgula.\nOutra linha", revised: "Uma frase com ponto.\n\nOutra linha nova")
-        let rebuilt = diff.segments.map { segment -> String in
+    private func rebuilt(_ diff: TextDiff) -> String {
+        diff.segments.map { segment -> String in
             switch segment {
             case .kept(let text): text
             case .edit(_, let added): added
             }
         }.joined()
-        XCTAssertEqual(rebuilt, diff.revised)
+    }
+
+    func testKeptAndAddedTextRebuildTheRevision() {
+        let diff = TextDiff(original: "Uma frase, com vírgula.\nOutra linha", revised: "Uma frase com ponto.\n\nOutra linha nova")
+        XCTAssertEqual(rebuilt(diff), diff.revised)
     }
 }

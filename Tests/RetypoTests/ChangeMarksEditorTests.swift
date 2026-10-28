@@ -41,6 +41,24 @@ final class ChangeMarksEditorTests: XCTestCase {
         XCTAssertEqual(pins(of: textView)?.offsets, [])
     }
 
+    /// Another run's text with removals at the same offsets: the pins must
+    /// redraw, since the same offset now sits somewhere else.
+    func testPinsRedrawWhenTheTextChangesUnderEqualOffsets() throws {
+        let first = TextDiff(original: "one two three", revised: "one three")
+        let second = TextDiff(original: "uno dos tres", revised: "uno tres")
+        XCTAssertEqual(first.marks.removals, second.marks.removals)
+        let textView = editor(first.revised)
+        // AppKit keeps no redraw request for a view outside a window.
+        let window = NSWindow(contentRect: textView.frame, styleMask: .borderless, backing: .buffered, defer: true)
+        window.contentView = textView
+        ChangeMarkPainter.apply(first.marks, to: textView)
+        let pins = try XCTUnwrap(pins(of: textView))
+        pins.needsDisplay = false
+        textView.string = second.revised
+        ChangeMarkPainter.apply(second.marks, to: textView)
+        XCTAssertTrue(pins.needsDisplay)
+    }
+
     func testPinsIgnoreClicks() {
         let textView = editor("text")
         XCTAssertNil(pins(of: textView)?.hitTest(NSPoint(x: 10, y: 10)))

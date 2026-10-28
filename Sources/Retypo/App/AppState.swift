@@ -10,10 +10,10 @@ final class AppState: ObservableObject {
     @Published var inputText: String = "" {
         // Any editor write (typing, mode result, restore, import) re-orients
         // the live-translation card to the text that is now in the editor,
-        // and retires change marks that describe some other text.
+        // and ends a change review the text no longer matches.
         didSet {
             scheduleLiveTranslation()
-            dropStaleChanges()
+            closeReviewIfEdited()
         }
     }
     @Published var correctedText: String = ""

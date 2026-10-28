@@ -33,7 +33,7 @@ enum ChangeMarkPainter {
             ], forCharacterRange: range)
         }
         let pins = textView.subviews.lazy.compactMap { $0 as? RemovalMarkView }.first
-        pins?.offsets = marks.removals.filter { $0 <= length }
+        pins?.show(marks.removals.filter { $0 <= length }, in: textView.string)
     }
 }
 
@@ -42,10 +42,8 @@ enum ChangeMarkPainter {
 /// the editor's text view and lets every click through.
 final class RemovalMarkView: NSView {
     private weak var textView: NSTextView?
-
-    var offsets: [Int] = [] {
-        didSet { if offsets != oldValue { needsDisplay = true } }
-    }
+    private(set) var offsets: [Int] = []
+    private var text = ""
 
     init(textView: NSTextView) {
         self.textView = textView
@@ -55,6 +53,15 @@ final class RemovalMarkView: NSView {
 
     @available(*, unavailable)
     required init?(coder: NSCoder) { nil }
+
+    /// Redraws when the pins or the text under them change: equal offsets
+    /// in another run's text sit somewhere else on screen.
+    func show(_ offsets: [Int], in text: String) {
+        guard offsets != self.offsets || (!offsets.isEmpty && text != self.text) else { return }
+        self.offsets = offsets
+        self.text = text
+        needsDisplay = true
+    }
 
     override var isFlipped: Bool { true }
 

@@ -33,9 +33,32 @@ final class ChangeReviewStateTests: XCTestCase {
         state.toggleChangeReview()
         XCTAssertTrue(state.isReviewingChanges)
         state.inputText = "the dog sat!"
-        XCTAssertFalse(state.inlineChanges.hasEdits)
+        XCTAssertFalse(state.visibleChanges.hasEdits)
         XCTAssertFalse(state.isReviewingChanges)
         XCTAssertEqual(state.wordsChangedLast, 1, "Δ still reports the last run")
+    }
+
+    /// A stray key, then the text view's own Cmd+Z: the result is back, and
+    /// so are its marks (the review stays closed).
+    func testUndoingAStrayKeyBringsTheMarksBack() {
+        let (state, _) = makeState()
+        run(state, from: "the cat sat", to: "the dog sat")
+        state.inputText = "the dog satx"
+        state.inputText = "the dog sat"
+        XCTAssertTrue(state.visibleChanges.hasEdits)
+        XCTAssertFalse(state.isReviewingChanges)
+    }
+
+    /// Return while reviewing must not send the result to the model again.
+    func testReturnWhileReviewingGoesBackToEditing() async {
+        let (state, _) = makeState()
+        run(state, from: "the cat sat", to: "the dog sat")
+        state.toggleChangeReview()
+        let status = state.status
+        await state.submitFromEditor()
+        XCTAssertFalse(state.isReviewingChanges)
+        XCTAssertEqual(state.status, status)
+        XCTAssertEqual(state.inputText, "the dog sat")
     }
 
     func testReviewNeedsEdits() {
@@ -76,20 +99,23 @@ final class ChangeReviewStateTests: XCTestCase {
         XCTAssertEqual(state.inlineChanges, first)
     }
 
-    func testAppliedCandidateMarksItsOwnEdits() {
+    /// Marks compare against the editor as it is when the candidate lands,
+    /// so an edit made after run-all started shows as replaced too.
+    func testAppliedCandidateMarksWhatItChangesInTheEditor() {
         let (state, _) = makeState()
-        state.inputText = "the cat sat"
         let changes = TextDiff(original: "the cat sat", revised: "the dog sat")
         state.candidateResults = [CandidateResult(action: EditAction.defaults[0], output: "the dog sat", diff: "", changes: changes, usage: .zero, costUSD: nil)]
+        state.inputText = "the cat sat down"
         state.restoreSelectedCandidateToEditor()
-        XCTAssertEqual(state.inlineChanges, changes)
         XCTAssertEqual(state.inputText, "the dog sat")
+        XCTAssertEqual(state.visibleChanges, TextDiff(original: "the cat sat down", revised: "the dog sat"))
+        XCTAssertEqual(state.visibleChanges.editCount, 2)
     }
 
     func testRestoringADraftDropsStaleMarks() {
         let (state, _) = makeState()
         run(state, from: "the cat sat", to: "the dog sat")
         state.restoreDraftSnapshot(DraftSnapshot(text: "an older draft"))
-        XCTAssertFalse(state.inlineChanges.hasEdits)
+        XCTAssertFalse(state.visibleChanges.hasEdits)
     }
 }

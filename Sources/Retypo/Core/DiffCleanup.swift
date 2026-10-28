@@ -60,36 +60,40 @@ private struct SegmentAccumulator {
     /// kept text before it, and at its end with the kept text after it: a
     /// removed paragraph takes its own line break, not the one the next
     /// paragraph still has.
+    /// Counts stay on Character sequences: rebuilding a String from reversed
+    /// characters fused a trailing LF + CR into one CRLF and shifted every
+    /// later mark. The shared whitespace is taken from the added side, which
+    /// is the revised text the marks index into.
     private mutating func closeEdit() {
         guard !removed.isEmpty || !added.isEmpty else { return }
-        let lead = Self.sharedWhitespace(removed, added)
-        let restRemoved = removed.dropFirst(lead.count)
-        let restAdded = added.dropFirst(lead.count)
-        let tail = String(Self.sharedWhitespace(String(restRemoved.reversed()), String(restAdded.reversed())).reversed())
-        kept += lead
+        let lead = Self.sharedWhitespaceCount(removed, added)
+        let restRemoved = removed.dropFirst(lead)
+        let restAdded = added.dropFirst(lead)
+        let tail = Self.sharedWhitespaceCount(restRemoved.reversed(), restAdded.reversed())
+        kept += added.prefix(lead)
         if !kept.isEmpty { segments.append(.kept(kept)) }
-        let edit = TextDiff.Segment.edit(removed: String(restRemoved.dropLast(tail.count)), added: String(restAdded.dropLast(tail.count)))
-        if edit != .edit(removed: "", added: "") { segments.append(edit) }
-        kept = tail
+        let removedCore = String(restRemoved.dropLast(tail))
+        let addedCore = String(restAdded.dropLast(tail))
+        if !removedCore.isEmpty || !addedCore.isEmpty { segments.append(.edit(removed: removedCore, added: addedCore)) }
+        kept = String(restAdded.suffix(tail))
         removed = ""
         added = ""
     }
 
-    private static func sharedWhitespace(_ first: String, _ second: String) -> String {
-        String(zip(first, second).prefix { $0 == $1 && $0.isWhitespace }.map(\.0))
+    private static func sharedWhitespaceCount<Characters: Sequence>(_ first: Characters, _ second: Characters) -> Int
+    where Characters.Element == Character {
+        zip(first, second).prefix { $0 == $1 && $0.isWhitespace }.count
     }
 }
 
 /// Makes a token diff read like an editor's markup.
 enum DiffCleanup {
-    static func tidy(_ segments: [TextDiff.Segment]) -> [TextDiff.Segment] {
-        settleEdges(absorbChaff(segments))
-    }
-
-    /// A stretch kept between two edits that is shorter than both (the
-    /// spaces in "~~que~~ envolvido ~~poderá~~ nas") is noise: it joins the
-    /// edits, as in diff-match-patch's semantic cleanup. A kept line break
-    /// never joins, so edits in two paragraphs stay apart.
+    /// A word two replacements happen to share ("o" in "~~vamos ver~~ quero
+    /// checar o ~~resultado~~ relatório") is noise in the review: shorter
+    /// than both, it joins them, as in diff-match-patch's semantic cleanup.
+    /// Only between replacements: a word kept between two removals or two
+    /// insertions really was kept. A kept line break never joins, so edits
+    /// in two paragraphs stay apart. The editor marks skip this step.
     static func absorbChaff(_ segments: [TextDiff.Segment]) -> [TextDiff.Segment] {
         var joined: [TextDiff.Segment] = []
         for segment in segments {
@@ -104,14 +108,19 @@ enum DiffCleanup {
 
     private static func mergedTail(of segments: [TextDiff.Segment]) -> TextDiff.Segment? {
         guard segments.count >= 3,
-              case .edit(let removedBefore, let addedBefore) = segments[segments.count - 3],
+              let before = replacement(segments[segments.count - 3]),
               case .kept(let between) = segments[segments.count - 2],
-              case .edit(let removedAfter, let addedAfter) = segments[segments.count - 1]
+              let after = replacement(segments[segments.count - 1])
         else { return nil }
-        let shorterThanBoth = between.count < max(removedBefore.count, addedBefore.count)
-            && between.count < max(removedAfter.count, addedAfter.count)
+        let shorterThanBoth = between.count < max(before.removed.count, before.added.count)
+            && between.count < max(after.removed.count, after.added.count)
         guard shorterThanBoth, !between.contains(where: \.isNewline) else { return nil }
-        return .edit(removed: removedBefore + between + removedAfter, added: addedBefore + between + addedAfter)
+        return .edit(removed: before.removed + between + after.removed, added: before.added + between + after.added)
+    }
+
+    private static func replacement(_ segment: TextDiff.Segment) -> (removed: String, added: String)? {
+        guard case .edit(let removed, let added) = segment, !removed.isEmpty, !added.isEmpty else { return nil }
+        return (removed, added)
     }
 
     /// Replies come back trimmed (and drafts often end in a newline), so a

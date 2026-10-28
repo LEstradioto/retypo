@@ -41,6 +41,17 @@ enum TrackChanges {
     }
 }
 
+/// A diff as track changes. Equatable, so SwiftUI skips restyling while the
+/// diff is the same: the review and the run-all cards sit under views that
+/// re-render on every AppState change, and a long diff takes milliseconds.
+struct TrackChangesText: View, Equatable {
+    let diff: TextDiff
+
+    var body: some View {
+        Text(TrackChanges.attributed(diff))
+    }
+}
+
 /// The last run as track changes, laid over the editor in its font and
 /// margins. Read-only: a click, Esc, ⌘⇧D or the next keystroke (which still
 /// reaches the editor underneath) returns to editing.
@@ -50,7 +61,7 @@ struct ChangeReviewOverlay: View {
 
     var body: some View {
         ScrollView {
-            Text(TrackChanges.attributed(diff))
+            TrackChangesText(diff: diff).equatable()
                 .font(.system(size: 15, design: .monospaced))
                 .foregroundStyle(Color(nsColor: state.editorFontColor ?? .labelColor))
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -88,7 +99,7 @@ struct ChangeCountButton: View {
                 .background(Capsule(style: .continuous).fill(state.isReviewingChanges ? Color.retypoAccent.opacity(0.15) : Color.clear))
         }
         .buttonStyle(.plain)
-        .disabled(!state.inlineChanges.hasEdits)
+        .disabled(!state.visibleChanges.hasEdits)
         .help(state.isReviewingChanges ? "Back to editing (⌘⇧D)" : "Show what the last run changed (⌘⇧D)")
         .pointingCursor()
     }
