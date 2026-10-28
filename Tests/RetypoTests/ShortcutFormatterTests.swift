@@ -30,4 +30,12 @@ final class ShortcutFormatterTests: XCTestCase {
     func testNormalizeEmpty() {
         XCTAssertEqual(ShortcutFormatter.normalize(""), "")
     }
+
+    func testGlyphsPrintLikeMacOSMenus() {
+        XCTAssertEqual(ShortcutFormatter.glyphs("cmd+2"), "⌘2")
+        XCTAssertEqual(ShortcutFormatter.glyphs("cmd+shift+d"), "⌘⇧D")
+        XCTAssertEqual(ShortcutFormatter.glyphs("Command+Option+]"), "⌘⌥]")
+        XCTAssertEqual(ShortcutFormatter.glyphs("ctrl+space"), "⌃Space")
+        XCTAssertEqual(ShortcutFormatter.glyphs(""), "")
+    }
 }

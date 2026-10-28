@@ -97,6 +97,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - Re-activating the window while the mode picker is open no longer steals
   focus from it.
 - The legacy "lighter" theme setting persists as Light.
+- The header and the shortcut recorder print shortcuts the way menus do
+  (`⌘2 · ⌘D`), not as `cmd+2`.
 
 ### Removed
 - Paste-confirmation modal and pending-import preview.

@@ -36,6 +36,23 @@ enum ShortcutFormatter {
         return (mods + [key]).filter { !$0.isEmpty }.joined(separator: "+")
     }
 
+    /// A stored shortcut the way macOS menus print it, for labels. The header
+    /// read "cmd+2 · ⌘D" before this.
+    ///
+    ///     ShortcutFormatter.glyphs("cmd+shift+d")  // "⌘⇧D"
+    static func glyphs(_ shortcut: String) -> String {
+        normalize(shortcut)
+            .split(separator: "+")
+            .map { glyphsByName[String($0)] ?? $0.uppercased() }
+            .joined()
+    }
+
+    private static let glyphsByName: [String: String] = [
+        "cmd": "⌘", "ctrl": "⌃", "opt": "⌥", "shift": "⇧",
+        "enter": "↩", "space": "Space", "esc": "⎋", "home": "↖", "end": "↘",
+        "left": "←", "right": "→", "down": "↓", "up": "↑"
+    ]
+
     private static let keyNamesByCode: [Int: String] = [
         36: "enter", 76: "enter",
         49: "space", 53: "esc",

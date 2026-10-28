@@ -47,7 +47,7 @@ struct KeyCaptureField: View {
     private var label: String {
         if let error { return error }
         if capturing { return "press keys…" }
-        return text.isEmpty ? "record" : text
+        return text.isEmpty ? "record" : ShortcutFormatter.glyphs(text)
     }
 
     private func beginCapture() {

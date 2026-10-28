@@ -39,7 +39,7 @@ extension RetypoView {
 
     private var modeShortcutLabel: String {
         let shortcut = state.settings.shortcutByAction[state.currentAction.id] ?? ""
-        return shortcut.isEmpty ? "⌘D" : "\(shortcut) · ⌘D"
+        return shortcut.isEmpty ? "⌘D" : "\(ShortcutFormatter.glyphs(shortcut)) · ⌘D"
     }
 
     /// Lights up only while staged import text waits for a conscious paste.
