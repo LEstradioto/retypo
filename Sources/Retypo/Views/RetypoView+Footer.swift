@@ -86,9 +86,7 @@ extension RetypoView {
     private var footerStats: some View {
         Group {
             wpmText
-            Text("Δ\(state.wordsChangedLast)")
-                .foregroundStyle(state.wordsChangedLast == 0 ? statColor : Color.retypoAccent)
-                .monospacedDigit()
+            ChangeCountButton()
             statusText
             Text("\(state.inputText.count)")
                 .monospacedDigit()

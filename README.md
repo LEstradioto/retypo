@@ -45,7 +45,7 @@ In Settings, pick a provider and click Refresh to load its models.
 - Codex/Claude Code prompt import from terminal windows without manual selection.
 - 13 pre-made prompts. Freeform mode: type the prompt live each run.
 - Auto-copy and auto-correct.
-- Inline or stacked diff. Changed words underlined green.
+- Track changes: new text tinted green, a red pin where text was removed. `Cmd+Shift+D` (or a click on `Δ`) shows the whole diff, removals struck through.
 - History, restorable. Don't lose your drafts.
 - Undo/redo.
 - Whitespace and newlines trimmed off LLM replies.
@@ -57,7 +57,7 @@ In Settings, pick a provider and click Refresh to load its models.
 - Per-mode and per-model shortcuts.
 - Enhanced modes: attach files, folders and web search to a mode; it researches before it answers. See [Enhanced modes](#enhanced-modes).
 - Cost tracking: last, session, today. Editable per-model pricing.
-- Footer stats: WPM, changed-word delta, char count.
+- Footer stats: WPM, number of edits in the last run (`Δ`), char count.
 - Auto-correct skips short text, code fences, shell commands, symbol-heavy lines. So it never rewrites a command you're typing.
 
 ## Subscription providers (Claude Code / Codex)
@@ -139,8 +139,9 @@ the editor, including imports received while the editor is empty. Failures:
 | `Cmd+Shift+Enter` | Run all enabled modes against current draft |
 | `Enter` | Run current mode, auto-copy |
 | `Shift+Enter` | New line |
-| `Esc` | Hide panel |
+| `Esc` | Hide panel (or leave the track-changes view) |
 | `Cmd+D` | Toggle Candidates overlay |
+| `Cmd+Shift+D` | Show what the last run changed (track changes); `Esc` or any key returns |
 | `Cmd+S` | Toggle Settings |
 | `Ctrl+Tab` | Cycle focus: editor, footer |
 | `Tab` / `Shift+Tab` / `Left` / `Right` | Nav within footer, Candidates, Settings |

@@ -45,7 +45,6 @@ extension AppState {
         outputText = ""
         correctedText = ""
         diffText = ""
-        inlineHighlightRanges = []
         candidateResults = []
         setCandidateOverlayVisible(false)
         selectedCandidateIndex = 0
@@ -63,7 +62,6 @@ extension AppState {
         updateTypingStats()
         draftPersistence.save(inputText)
         scheduleDraftSnapshot()
-        inlineHighlightRanges = []
         scheduleLiveTranslation()
         if suppressNextInputChange {
             suppressNextInputChange = false

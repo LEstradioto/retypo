@@ -26,7 +26,7 @@ struct CandidateCard: View {
                     .foregroundStyle(Palette.secondaryText)
             }
             ScrollView {
-                Text(candidate.diff)
+                Text(TrackChanges.attributed(candidate.changes))
                     .font(.system(size: 11, weight: .regular, design: .monospaced))
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .textSelection(.enabled)

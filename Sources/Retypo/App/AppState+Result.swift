@@ -7,7 +7,6 @@ extension AppState {
         correctedText = text
         outputText = text
         diffText = DiffService.compactDiff(original: outcome.original, corrected: text)
-        wordsChangedLast = InlineDiffService.changedWordCount(original: outcome.original, corrected: text)
         let costUSD = cost.recordUsage(provider: settings.provider, model: selectedModel ?? "", usage: outcome.response.usage)
         appendHistory(HistoryDraft(original: outcome.original, output: text, diff: diffText, action: outcome.action, instruction: outcome.instruction, usage: outcome.response.usage, costUSD: costUSD))
         cost.appendLedgerEntry(provider: settings.provider, model: selectedModel ?? "", usage: outcome.response.usage, costUSD: costUSD)
@@ -16,11 +15,11 @@ extension AppState {
         } else {
             status = outcome.changed ? "Done" : "No changes"
         }
-        applyInlineSubstitution(original: outcome.original, text: text)
+        applyInlineSubstitution(TextDiff(original: outcome.original, revised: text), text: text)
     }
 
-    private func applyInlineSubstitution(original: String, text: String) {
-        inlineHighlightRanges = InlineDiffService.changedRanges(original: original, corrected: text)
+    private func applyInlineSubstitution(_ changes: TextDiff, text: String) {
+        showChanges(changes)
         suppressNextInputChange = true
         inputText = text
         draftPersistence.save(inputText)
@@ -29,7 +28,8 @@ extension AppState {
     func appendCandidate(_ outcome: ActionOutcome) {
         let costUSD = cost.computeCost(provider: settings.provider, model: selectedModel ?? "", usage: outcome.response.usage)
         let diff = DiffService.compactDiff(original: outcome.original, corrected: outcome.text)
-        candidateResults.append(CandidateResult(action: outcome.action, output: outcome.text, diff: diff, usage: outcome.response.usage, costUSD: costUSD))
+        let changes = TextDiff(original: outcome.original, revised: outcome.text)
+        candidateResults.append(CandidateResult(action: outcome.action, output: outcome.text, diff: diff, changes: changes, usage: outcome.response.usage, costUSD: costUSD))
         appendHistory(HistoryDraft(original: outcome.original, output: outcome.text, diff: diff, action: outcome.action, instruction: outcome.instruction, usage: outcome.response.usage, costUSD: costUSD))
         cost.appendLedgerEntry(provider: settings.provider, model: selectedModel ?? "", usage: outcome.response.usage, costUSD: costUSD)
     }

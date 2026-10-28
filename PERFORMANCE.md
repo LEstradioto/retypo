@@ -43,7 +43,8 @@ These are code-review findings, not measured bottlenecks.
    unrelated state changes re-evaluate broad SwiftUI subtrees.
 4. `InlineDiffService` uses an O(oldWords * newWords) LCS matrix only within a
    fixed one-million-cell budget. Loop 4 added a linear coarse path for larger
-   documents after Release measurements confirmed quadratic growth.
+   documents after Release measurements confirmed quadratic growth. `TextDiff`
+   replaced it on 2026-10-27; see the track-changes pass under Loop 4.
 5. Import debugging creates an unstructured task, timestamp formatter, and file
    handle for each log line. This is bounded during normal imports but should be
    checked in File Activity before changing it.
@@ -219,6 +220,34 @@ Post-change Release medians were 0.11 ms at 100 words, 3.13 ms at 1,000 words,
 0.66 ms at 3,000 words, and 2.07 ms at 10,000 words. Tests preserve all exact
 small-input fixtures, lock the cell-budget boundary, validate a precise
 10,000-word single replacement, and cover a large full rewrite.
+
+#### Track-changes diff — 2026-10-27
+
+`TextDiff` replaced the words-only LCS so punctuation, capitals, line breaks
+and removals show. It trims the common prefix and suffix, aligns words,
+punctuation and line breaks with Myers' O(ND) algorithm, compares the spaces
+between kept tokens, then merges short kept stretches between edits. The
+ceiling moved from text length to edit count: up to 1,000 removed plus added
+tokens the diff stays exact at any length (the Myers trace holds about
+(D+1)² Ints, the same 8 MB the LCS budget allowed); past that the changed
+middle shows as one replaced block.
+
+Release medians on this Mac (Apple Silicon), from a `/tmp` harness compiled
+with `-O` against `Core/TextDiff.swift` and the three `Core/Diff*.swift` files:
+
+| Words | One middle word | A word every 50 | Full rewrite |
+| ---: | ---: | ---: | ---: |
+| 100 | 0.40 ms | 0.39 ms | 0.43 ms |
+| 1,000 | 3.00 ms | 3.06 ms | 3.42 ms |
+| 3,000 | 8.74 ms | 9.04 ms | 10.00 ms |
+| 10,000 | 29.31 ms | 29.93 ms | 36.25 ms |
+
+A change every 20, 10 or 5 words in 10,000 words, past the edit limit,
+stayed at 35–37 ms, and peak process footprint stayed under 20 MB. Time is
+linear in length and mostly tokenizing and interning both texts, not the
+alignment. Against the previous pass, short texts cost a few tenths of a
+millisecond more, and long texts pay about 3 ms per 1,000 words to stay
+exact where the coarse path marked one span.
 
 ### Loop 5: launch, logging, and idle work
 

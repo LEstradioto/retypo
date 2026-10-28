@@ -4,7 +4,7 @@ import AppKit
 struct NativeTextEditor: NSViewRepresentable {
     @Binding var text: String
     var nativeSpellcheck: Bool
-    var highlightRanges: [NSRange] = []
+    var changeMarks = ChangeMarks()
     var fontColor: NSColor? = nil
     var onSubmit: () -> Void
     var onRunAll: () -> Void = {}
@@ -33,6 +33,7 @@ struct NativeTextEditor: NSViewRepresentable {
         bindCallbacks(to: textView)
         configure(textView)
         textView.string = text
+        ChangeMarkPainter.install(on: textView)
 
         scroll.documentView = textView
         return scroll
@@ -49,7 +50,7 @@ struct NativeTextEditor: NSViewRepresentable {
         }
         bindCallbacks(to: textView)
         configure(textView)
-        applyHighlights(to: textView)
+        ChangeMarkPainter.apply(changeMarks, to: textView)
     }
 
     private func bindCallbacks(to textView: KeyHandlingTextView) {
@@ -87,20 +88,6 @@ struct NativeTextEditor: NSViewRepresentable {
         textView.isHorizontallyResizable = false
         textView.autoresizingMask = [.width]
         textView.textContainer?.widthTracksTextView = true
-    }
-
-    private func applyHighlights(to textView: NSTextView) {
-        guard let layoutManager = textView.layoutManager else { return }
-        let full = NSRange(location: 0, length: (textView.string as NSString).length)
-        layoutManager.removeTemporaryAttribute(.backgroundColor, forCharacterRange: full)
-        layoutManager.removeTemporaryAttribute(.foregroundColor, forCharacterRange: full)
-        let color = NSColor.systemGreen.withAlphaComponent(0.28)
-        let underline = NSColor.systemGreen.withAlphaComponent(0.60)
-        for range in highlightRanges where NSMaxRange(range) <= full.length {
-            layoutManager.addTemporaryAttribute(.backgroundColor, value: color, forCharacterRange: range)
-            layoutManager.addTemporaryAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, forCharacterRange: range)
-            layoutManager.addTemporaryAttribute(.underlineColor, value: underline, forCharacterRange: range)
-        }
     }
 
     final class Coordinator: NSObject, NSTextViewDelegate {

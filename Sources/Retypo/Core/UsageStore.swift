@@ -119,6 +119,9 @@ struct CandidateResult: Identifiable, Hashable {
     var action: EditAction
     var output: String
     var diff: String
+    /// The candidate against the draft it was run on, for its card and the
+    /// editor marks once applied.
+    var changes: TextDiff = .none
     var usage: TokenUsage
     var costUSD: Double?
 }

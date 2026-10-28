@@ -12,7 +12,7 @@ struct EditorSnapshot: Equatable {
     var outputText: String
     var status: String
     var diffText: String
-    var inlineHighlightRanges: [NSRange]
+    var inlineChanges: TextDiff
     var candidateResults: [CandidateResult]
     var showCandidateOverlay: Bool
     var selectedCandidateIndex: Int

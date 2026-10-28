@@ -110,7 +110,9 @@ extension AppState {
     func restoreSelectedCandidateToEditor() {
         guard candidateResults.indices.contains(selectedCandidateIndex) else { return }
         pushEditorUndoSnapshot()
-        inputText = candidateResults[selectedCandidateIndex].output
+        let candidate = candidateResults[selectedCandidateIndex]
+        showChanges(candidate.changes)
+        inputText = candidate.output
         draftPersistence.save(inputText)
         setCandidateOverlayVisible(false)
         status = "Applied candidate"

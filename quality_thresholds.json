@@ -4,19 +4,19 @@
   "swiftlint": {
     "cyclomatic_complexity": 3,
     "function_body_length": 12,
-    "type_body_length": 7,
+    "type_body_length": 6,
     "file_length": 7,
     "function_parameter_count": 0,
     "force_unwrapping": 0,
     "force_cast": 0,
     "force_try": 0,
-    "total_warnings": 38
+    "total_warnings": 35
   },
   "periphery": {
     "unused_declarations": 0
   },
   "coverage": {
-    "line_coverage_percent_min": 32.08
+    "line_coverage_percent_min": 35.34
   },
   "_skipped": {
     "branch_coverage": "Apple platforms expose only line coverage natively",

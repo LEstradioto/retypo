@@ -9,7 +9,7 @@ final class EditorEngineTests: XCTestCase {
             outputText: "",
             status: "Ready",
             diffText: "",
-            inlineHighlightRanges: [],
+            inlineChanges: .none,
             candidateResults: [],
             showCandidateOverlay: false,
             selectedCandidateIndex: 0,

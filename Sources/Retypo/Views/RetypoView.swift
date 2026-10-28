@@ -36,12 +36,12 @@ struct RetypoView: View {
             NativeTextEditor(
                 text: $state.inputText,
                 nativeSpellcheck: state.settings.nativeSpellcheck,
-                highlightRanges: state.inlineHighlightRanges,
+                changeMarks: state.inlineChanges.marks,
                 fontColor: state.editorFontColor,
                 onSubmit: { Task { await state.runCurrentAction(source: "enter") } },
                 onRunAll: { Task { await state.runAllEnabledModes() } },
                 onChange: { state.onInputChanged() },
-                onCancel: { state.requestHide() },
+                onCancel: { state.cancelFromEditor() },
                 onTab: { if state.showCandidateOverlay { state.nextCandidate(); return true }; if state.footerFocusIndex != nil { state.nextFooterFocus(); return true }; return false },
                 onShiftTab: { if state.showCandidateOverlay { state.previousCandidate(); return true }; if state.footerFocusIndex != nil { state.previousFooterFocus(); return true }; return false },
                 onFocusCycle: { state.cycleFooterFocus() },
@@ -52,6 +52,7 @@ struct RetypoView: View {
                 onRedo: { state.redoEditorChange() },
                 onShortcut: { state.handleShortcut($0) }
             )
+            .changeReview(state)
             .frame(minHeight: minHeight)
             .background(editorBackground)
             .overlay(editorStroke)

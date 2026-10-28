@@ -8,6 +8,7 @@ extension AppState {
         if matchesModelNavigationShortcut(shortcut) { return true }
         if matchesPerModelShortcut(shortcut) { return true }
         if matchesSmartPasteShortcut(shortcut) { return true }
+        if shortcut == Self.changeReviewShortcut { toggleChangeReview(); return true }
         return false
     }
 
@@ -17,9 +18,13 @@ extension AppState {
         guard !shortcut.isEmpty else { return nil }
         if let owner = actionShortcutOwner(shortcut, excluding: actionID) { return owner }
         if let owner = modelShortcutOwner(shortcut) { return owner }
-        if settings.smartPasteEnabled,
-           ShortcutFormatter.normalize(settings.smartPasteShortcut) == shortcut { return "Smart paste" }
-        return nil
+        return builtInShortcutOwner(shortcut)
+    }
+
+    private func builtInShortcutOwner(_ shortcut: String) -> String? {
+        if shortcut == Self.changeReviewShortcut { return "Show changes" }
+        guard settings.smartPasteEnabled, ShortcutFormatter.normalize(settings.smartPasteShortcut) == shortcut else { return nil }
+        return "Smart paste"
     }
 
     private func actionShortcutOwner(_ shortcut: String, excluding actionID: String?) -> String? {

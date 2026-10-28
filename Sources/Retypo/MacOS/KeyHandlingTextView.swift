@@ -32,7 +32,7 @@ final class KeyHandlingTextView: NSTextView {
     private func handleSpecialKeys(_ event: NSEvent) -> Bool {
         switch Int(event.keyCode) {
         case 48: return handleTab(event)
-        case 2 where event.modifierFlags.contains(.command): onToggleOverlay?(); return true
+        case 2 where event.modifierFlags.contains(.command) && !event.modifierFlags.contains(.shift): onToggleOverlay?(); return true
         case 1 where event.modifierFlags.contains(.command): onSettings?(); return true
         case 36, 76: handleReturn(event); return true
         case 53: onCancel?(); return true

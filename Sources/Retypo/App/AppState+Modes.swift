@@ -41,6 +41,7 @@ extension AppState {
 
     func restoreHistory(_ entry: HistoryEntry, useOutput: Bool = false) {
         pushEditorUndoSnapshot()
+        if useOutput { showChanges(TextDiff(original: entry.input, revised: entry.output)) }
         inputText = useOutput ? entry.output : entry.input
         outputText = entry.output
         diffText = entry.diff

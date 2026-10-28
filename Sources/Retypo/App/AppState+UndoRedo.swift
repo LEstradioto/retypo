@@ -45,7 +45,7 @@ extension AppState {
             outputText: outputText,
             status: status,
             diffText: diffText,
-            inlineHighlightRanges: inlineHighlightRanges,
+            inlineChanges: inlineChanges,
             candidateResults: candidateResults,
             showCandidateOverlay: showCandidateOverlay,
             selectedCandidateIndex: selectedCandidateIndex,
@@ -59,7 +59,8 @@ extension AppState {
         correctedText = snapshot.correctedText
         outputText = snapshot.outputText
         diffText = snapshot.diffText
-        inlineHighlightRanges = snapshot.inlineHighlightRanges
+        inlineChanges = snapshot.inlineChanges
+        isReviewingChanges = false
         candidateResults = snapshot.candidateResults
         showCandidateOverlay = snapshot.showCandidateOverlay
         selectedCandidateIndex = min(snapshot.selectedCandidateIndex, max(0, candidateResults.count - 1))

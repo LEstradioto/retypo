@@ -9,8 +9,12 @@ final class AppState: ObservableObject {
     @Published var settings: RetypoSettings
     @Published var inputText: String = "" {
         // Any editor write (typing, mode result, restore, import) re-orients
-        // the live-translation card to the text that is now in the editor.
-        didSet { scheduleLiveTranslation() }
+        // the live-translation card to the text that is now in the editor,
+        // and retires change marks that describe some other text.
+        didSet {
+            scheduleLiveTranslation()
+            dropStaleChanges()
+        }
     }
     @Published var correctedText: String = ""
     @Published var outputText: String = ""
@@ -19,7 +23,9 @@ final class AppState: ObservableObject {
     /// footer line, so the readable version lives here for tooltip and copy.
     @Published var lastErrorDetail: String?
     @Published var diffText: String = ""
-    @Published var inlineHighlightRanges: [NSRange] = []
+    /// What the last run changed in the editor's text; see AppState+ChangeReview.
+    @Published var inlineChanges: TextDiff = .none
+    @Published var isReviewingChanges = false
     @Published var showSettings = false
     /// Cmd+D mode picker lives in the main window header. Index tracks the
     /// highlighted pill; arrows move it, Enter runs it.

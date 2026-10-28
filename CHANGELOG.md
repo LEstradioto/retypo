@@ -47,8 +47,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - The mode prompt box in `Cmd+D` resizes like a textarea: drag the corner grip.
   The height is remembered, and the panel grows (upward when docked low) once
   the editor below reaches its minimum.
+- Track changes for every run: click the footer `Δ` or press `Cmd+Shift+D`
+  to see the result with removed text struck through in red and added text
+  in green; Esc, a click or the next keystroke returns to editing. The
+  run-all cards show the same view instead of the old and new text stacked.
 
 ### Changed
+- The run diff now compares punctuation, capitalization and line breaks,
+  and shows removals: the editor tints new text green and puts a red pin
+  where text was removed. It used to compare lowercased words only, so a
+  comma, a capital or a dropped phrase never showed.
 - Renamed Retypo Air to Retypo: app, Swift package, bundle id
   (`app.retypo.dev`), and data directory. The first launch moves
   `~/.retypo-air/` to `~/.retypo/` and leaves a symlink at the old path.
@@ -67,6 +75,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
   since there is no dot or shortcut to paste them with.
 
 ### Fixed
+- Green underlines no longer linger on old words after you type over a
+  result: clearing the marks removed only their background.
+- Applying a run-all candidate or restoring a history output no longer
+  leaves the previous run's highlights over the new text.
 - Live translation now shows the text as it stands *after* a mode is
   applied: it holds back while a run is in flight and re-translates the
   resulting editor text instead of the pre-mode draft.
