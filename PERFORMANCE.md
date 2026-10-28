@@ -233,17 +233,19 @@ tokens the diff stays exact at any length (the Myers trace holds about
 middle shows as one replaced block.
 
 Release medians on this Mac (Apple Silicon), from a `/tmp` harness compiled
-with `-O` against `Core/TextDiff.swift` and the three `Core/Diff*.swift` files:
+with `-O` against `Core/TextDiff.swift` and the `Core/Diff*.swift` files:
 
 | Words | One middle word | A word every 50 | Full rewrite |
 | ---: | ---: | ---: | ---: |
-| 100 | 0.40 ms | 0.39 ms | 0.43 ms |
-| 1,000 | 3.00 ms | 3.06 ms | 3.42 ms |
-| 3,000 | 8.74 ms | 9.04 ms | 10.00 ms |
-| 10,000 | 29.31 ms | 29.93 ms | 36.25 ms |
+| 100 | 0.45 ms | 0.45 ms | 0.47 ms |
+| 1,000 | 3.46 ms | 3.44 ms | 3.63 ms |
+| 3,000 | 10.16 ms | 10.02 ms | 10.85 ms |
+| 10,000 | 33.54 ms | 33.12 ms | 37.43 ms |
 
 A change every 20, 10 or 5 words in 10,000 words, past the edit limit,
-stayed at 35–37 ms, and peak process footprint stayed under 20 MB. Time is
+stayed at 37–38 ms, and peak process footprint stayed under 20 MB. Matching
+line ends checks only tokens that start with whitespace: scanning every word
+for line breaks had put 10,000 words at 46 ms. Time is
 linear in length and mostly tokenizing and interning both texts, not the
 alignment. Against the previous pass, short texts cost a few tenths of a
 millisecond more, and long texts pay about 3 ms per 1,000 words to stay

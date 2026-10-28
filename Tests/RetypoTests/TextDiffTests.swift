@@ -81,6 +81,29 @@ final class TextDiffTests: XCTestCase {
         XCTAssertEqual(TextDiff(original: "Primeiro parágrafo.\r\rSegundo paragrafo.", revised: reply).editCount, 1)
     }
 
+    /// Trailing spaces trimmed from a CRLF draft, answered in LF: one pin
+    /// for the spaces, nothing tinted for the breaks.
+    func testTrimmedSpacesBeforeOtherLineEndsAreOneRemoval() {
+        let diff = TextDiff(original: "end.  \r\n\r\nNext", revised: "end.\n\nNext")
+        XCTAssertEqual(diff.marks.removals, [4])
+        XCTAssertEqual(diff.marks.added, [])
+    }
+
+    /// The system's word segmentation reports line breaks inside CJK text
+    /// as words, which split one run of breaks into two pieces.
+    func testRestyledBreaksInCJKTextAreNotEdits() {
+        XCTAssertEqual(TextDiff(original: "de\u{85}日本\r\n\u{2029}日本 日本", revised: "de\n日本\n\n日本 日本").editCount, 0)
+        XCTAssertEqual(DiffTokenizer.pieces(of: "日本\r\n\u{2029}日本").count, 3)
+    }
+
+    /// Thai has no spaces; its word breaks moved with the line break before
+    /// it, giving an "edit" whose two sides were the same text.
+    func testAnEditThatReadsTheSameIsKept() {
+        let original = "\u{8A9E}\n\n\rไทยcat\n\u{3000} e\u{301}\n"
+        let revised = "\u{8A9E}\r\n\r\n\u{85}ไทยcat\r\n\u{3000} e\u{301}\u{2028}"
+        XCTAssertFalse(TextDiff(original: original, revised: revised).hasEdits)
+    }
+
     /// Rebuilding a String from reversed characters fused LF + CR into CRLF
     /// and pushed every later mark one unit right.
     func testLineFeedThenCarriageReturnKeepsMarksInPlace() {

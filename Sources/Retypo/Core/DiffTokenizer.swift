@@ -9,32 +9,53 @@ import Foundation
 enum DiffTokenizer {
     static func pieces(of text: String) -> [String] {
         let ns = text as NSString
-        var pieces: [String] = []
+        var collector = DiffPieceCollector()
         var cursor = 0
         let everything = NSRange(location: 0, length: ns.length)
         ns.enumerateSubstrings(in: everything, options: [.byWords, .localized, .substringNotRequired]) { _, word, _, _ in
-            appendGap(ns.substring(with: NSRange(location: cursor, length: word.location - cursor)), to: &pieces)
-            pieces.append(ns.substring(with: word))
+            collector.gap(ns.substring(with: NSRange(location: cursor, length: word.location - cursor)))
+            collector.word(ns.substring(with: word))
             cursor = NSMaxRange(word)
         }
-        appendGap(ns.substring(from: cursor), to: &pieces)
-        return pieces
+        collector.gap(ns.substring(from: cursor))
+        return collector.finish()
     }
+}
 
-    /// Between two words: a run of whitespace is one piece, any other
-    /// character (punctuation, symbol, emoji) one piece each.
-    private static func appendGap(_ gap: String, to pieces: inout [String]) {
-        var whitespace = ""
-        for character in gap {
+/// Keeps every run of whitespace whole, however the system segments words:
+/// in CJK text it reports line breaks and spaces as words of their own, so
+/// "\r\n\u{2029}" was one piece on one side and two on the other.
+private struct DiffPieceCollector {
+    private var pieces: [String] = []
+    private var whitespace = ""
+
+    /// Between two words: whitespace extends the current run, any other
+    /// character (punctuation, symbol, emoji) is a piece of its own.
+    mutating func gap(_ text: String) {
+        for character in text {
             if character.isWhitespace {
                 whitespace.append(character)
                 continue
             }
-            if !whitespace.isEmpty { pieces.append(whitespace) }
-            whitespace = ""
+            flush()
             pieces.append(String(character))
         }
+    }
+
+    mutating func word(_ text: String) {
+        if DiffTokenInterner.startsWithWhitespace(text), text.allSatisfy(\.isWhitespace) { return gap(text) }
+        flush()
+        pieces.append(text)
+    }
+
+    mutating func finish() -> [String] {
+        flush()
+        return pieces
+    }
+
+    private mutating func flush() {
         if !whitespace.isEmpty { pieces.append(whitespace) }
+        whitespace = ""
     }
 }
 
@@ -83,7 +104,19 @@ struct DiffTokenInterner {
     /// would otherwise turn every paragraph break into an edit. Kept text
     /// comes from the revision, so the marks still index its own breaks.
     static func matchKey(_ piece: String) -> String {
-        guard piece.contains(where: \.isNewline) else { return piece }
-        return String(piece.map { $0.isNewline ? "\n" : $0 })
+        // Only whitespace runs hold line breaks; a word needs no scan.
+        guard startsWithWhitespace(piece) else { return piece }
+        return normalizingLineBreaks(piece)
+    }
+
+    static func normalizingLineBreaks(_ text: String) -> String {
+        guard text.contains(where: \.isNewline) else { return text }
+        return String(text.map { $0.isNewline ? "\n" : $0 })
+    }
+
+    /// The first scalar decides, as `Character.isWhitespace` does, without
+    /// walking grapheme clusters for every word.
+    static func startsWithWhitespace(_ text: String) -> Bool {
+        text.unicodeScalars.first?.properties.isWhitespace == true
     }
 }

@@ -52,7 +52,7 @@ struct TextDiff: Hashable {
         let oldIDs = interner.ids(for: old.tokens)
         let newIDs = interner.ids(for: new.tokens)
         let steps = DiffAlignment.steps(oldIDs, newIDs)
-        return DiffCleanup.settleEdges(DiffSegmentBuilder.segments(steps: steps, old: old, new: new))
+        return DiffCleanup.settle(DiffSegmentBuilder.segments(steps: steps, old: old, new: new))
     }
 }
 
